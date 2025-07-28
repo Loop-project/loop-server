@@ -1,4 +1,4 @@
-package server.loop.domain.post.dto.req;
+package server.loop.domain.post.dto.post.req;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -6,7 +6,7 @@ import server.loop.domain.post.entity.Category;
 
 @Getter
 @Setter
-public class PostCreateRequestDto {
+public class PostUpdateRequestDto {
     private String title;
     private String content;
     private Category category;

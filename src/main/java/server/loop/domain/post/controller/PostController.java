@@ -5,9 +5,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import server.loop.domain.post.dto.req.PostCreateRequestDto;
-import server.loop.domain.post.dto.req.PostUpdateRequestDto;
-import server.loop.domain.post.dto.res.PostResponseDto;
+import server.loop.domain.post.dto.post.req.PostCreateRequestDto;
+import server.loop.domain.post.dto.post.req.PostUpdateRequestDto;
+import server.loop.domain.post.dto.post.res.PostResponseDto;
 import server.loop.domain.post.service.PostService;
 
 import java.nio.file.AccessDeniedException;

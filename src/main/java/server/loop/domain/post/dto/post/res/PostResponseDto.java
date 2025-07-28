@@ -1,4 +1,4 @@
-package server.loop.domain.post.dto.res;
+package server.loop.domain.post.dto.post.res;
 
 import lombok.Getter;
 import server.loop.domain.post.entity.Category;

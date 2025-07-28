@@ -35,8 +35,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/users/signup", "/api/users/login", "/api/token/reissue").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
-
+                        .requestMatchers(HttpMethod.GET, "/api/posts/**", "/api/posts/{postId}/comments").permitAll()
                         .anyRequest().authenticated()
                 )
                 // 직접 만든 JwtAuthenticationFilter를 UsernamePasswordAuthenticationFilter 앞에 추가
