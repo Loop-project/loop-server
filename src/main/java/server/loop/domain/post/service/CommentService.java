@@ -57,9 +57,10 @@ public class CommentService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
 
-        return commentRepository.findByPost(post).stream()
-                .filter(comment -> comment.getParent() == null) // 최상위 댓글(부모 없는 댓글)만 필터링
-                .map(CommentResponseDto::new) // DTO로 변환
+        // 수정한 레포지토리 메소드 사용
+        return commentRepository.findActiveCommentsByPost(post).stream()
+                .filter(comment -> comment.getParent() == null)
+                .map(CommentResponseDto::new)
                 .collect(Collectors.toList());
     }
     public void updateComment(Long commentId, CommentUpdateRequestDto requestDto, String email) throws AccessDeniedException {
@@ -86,4 +87,6 @@ public class CommentService {
 
         commentRepository.delete(comment);
     }
+
+
 }

@@ -9,10 +9,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import server.loop.domain.post.dto.post.req.PostCreateRequestDto;
 import server.loop.domain.post.dto.post.req.PostUpdateRequestDto;
+import server.loop.domain.post.dto.post.res.PostDetailResponseDto;
 import server.loop.domain.post.dto.post.res.PostResponseDto;
 import server.loop.domain.post.dto.post.res.SliceResponseDto;
 import server.loop.domain.post.entity.Category;
 import server.loop.domain.post.service.PostService;
+import server.loop.domain.user.entity.User;
 
 import java.nio.file.AccessDeniedException;
 import java.util.List;
@@ -35,11 +37,13 @@ public class PostController {
 
     // 게시글 단건 조회
     @GetMapping("/{postId}")
-    public ResponseEntity<PostResponseDto> getPost(@PathVariable Long postId,
-                                                   @AuthenticationPrincipal UserDetails userDetails) {
-        PostResponseDto postResponseDto = postService.getPost(postId, userDetails.getUsername());
-        return ResponseEntity.ok(postResponseDto);
+    public ResponseEntity<PostDetailResponseDto> getPost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal User currentUser) {
+        PostDetailResponseDto response = postService.getPost(postId, currentUser);
+        return ResponseEntity.ok(response);
     }
+
 
     // 게시글 수정
     @PutMapping("/{postId}")
