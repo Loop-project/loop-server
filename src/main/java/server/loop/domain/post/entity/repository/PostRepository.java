@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import server.loop.domain.post.entity.Category;
 import server.loop.domain.post.entity.Post;
+import server.loop.domain.user.entity.User;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,4 +33,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             "LEFT JOIN FETCH c.author " +
             "WHERE p.id = :id AND p.isDeleted = false")
     Optional<Post> findActivePostWithCommentsById(@Param("id") Long id);
+
+    @Query("SELECT p FROM Post p WHERE p.author = :author AND p.isDeleted = false ORDER BY p.createdAt DESC")
+    Slice<Post> findActivePostsByAuthor(@Param("author") User author, Pageable pageable);
 }
