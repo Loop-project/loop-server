@@ -1,0 +1,67 @@
+package server.loop.domain.user.service;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import server.loop.domain.auth.dto.TokenDto;
+import server.loop.domain.auth.entity.RefreshToken;
+import server.loop.domain.auth.entity.repo.RefreshTokenRepository;
+import server.loop.domain.user.dto.req.UserLoginDto;
+import server.loop.domain.user.dto.req.UserSignUpDto;
+import server.loop.domain.user.entity.User;
+import server.loop.domain.user.entity.repository.UserRepository;
+import server.loop.global.security.JwtTokenProvider;
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class UserService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenRepository refreshTokenRepository;
+
+    public Long signUp(UserSignUpDto signUpDto) throws Exception {
+        // 이메일 중복 체크
+        if (userRepository.findByEmail(signUpDto.getEmail()).isPresent()) {
+            throw new Exception("이미 존재하는 이메일입니다.");
+        }
+
+        User user = User.builder()
+                .email(signUpDto.getEmail())
+                .password(passwordEncoder.encode(signUpDto.getPassword())) // 비밀번호 암호화
+                .nickname(signUpDto.getNickname())
+                .age(signUpDto.getAge())
+                .gender(signUpDto.getGender())
+                .build();
+
+        User savedUser = userRepository.save(user);
+        return savedUser.getId();
+    }
+
+    @Transactional(readOnly = true)
+    public TokenDto login(UserLoginDto loginDto) {
+        User user = userRepository.findByEmail(loginDto.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+
+        if (!passwordEncoder.matches(loginDto.getPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("잘못된 비밀번호입니다.");
+        }
+
+        // 1. Access Token과 Refresh Token 생성
+        String accessToken = jwtTokenProvider.createAccessToken(user.getEmail());
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail());
+
+        // 2. Refresh Token을 DB에 저장 (이미 있으면 업데이트, 없으면 새로 생성)
+        refreshTokenRepository.findByUser(user)
+                .ifPresentOrElse(
+                        (token) -> token.update(refreshToken),
+                        () -> refreshTokenRepository.save(new RefreshToken(user, refreshToken))
+                );
+
+        // 3. 두 토큰을 DTO에 담아 반환
+        return new TokenDto(accessToken, refreshToken);
+    }
+}
