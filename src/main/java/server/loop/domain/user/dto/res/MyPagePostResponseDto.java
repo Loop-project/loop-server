@@ -1,4 +1,4 @@
-package server.loop.domain.post.dto.post.res;
+package server.loop.domain.user.dto.res;
 
 import lombok.Getter;
 import server.loop.domain.post.entity.Category;
@@ -7,7 +7,7 @@ import server.loop.domain.post.entity.Post;
 import java.time.LocalDateTime;
 
 @Getter
-public class PostResponseDto {
+public class MyPagePostResponseDto {
     private final Long id;
     private final String title;
     private final String content;
@@ -17,24 +17,16 @@ public class PostResponseDto {
     private final LocalDateTime updatedAt;
     private final int likeCount;
     private final int commentCount;
-    private final boolean likedByUser;
 
-    public PostResponseDto(Post post) {
-        this(post, false);
-    }
-
-    public PostResponseDto(Post post, boolean likedByUser) {
+    public MyPagePostResponseDto(Post post) {
         this.id = post.getId();
         this.title = post.getTitle();
         this.content = post.getContent();
-        this.authorNickname = (post.getAuthor() != null)
-                ? post.getAuthor().getNickname()
-                : "탈퇴한 회원입니다.";
+        this.authorNickname = post.getAuthor().getNickname();
         this.category = post.getCategory();
         this.createdAt = post.getCreatedAt();
         this.updatedAt = post.getUpdatedAt();
-        this.likeCount = (post.getLikes() != null) ? post.getLikes().size() : 0;
-        this.commentCount = (post.getComments() != null) ? post.getComments().size() : 0;
-        this.likedByUser = likedByUser;
+        this.likeCount = post.getLikes().size();
+        this.commentCount = post.getComments().size();
     }
 }

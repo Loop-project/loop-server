@@ -7,8 +7,11 @@ import org.springframework.transaction.annotation.Transactional;
 import server.loop.domain.auth.dto.TokenDto;
 import server.loop.domain.auth.entity.RefreshToken;
 import server.loop.domain.auth.entity.repo.RefreshTokenRepository;
+import server.loop.domain.post.entity.Comment;
+import server.loop.domain.post.entity.Post;
 import server.loop.domain.user.dto.req.UserLoginDto;
 import server.loop.domain.user.dto.req.UserSignUpDto;
+import server.loop.domain.user.dto.req.UserUpdateRequestDto;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
 import server.loop.global.security.JwtTokenProvider;
@@ -65,5 +68,33 @@ public class UserService {
 
         // 3. 두 토큰을 DTO에 담아 반환
         return new TokenDto(accessToken, refreshToken);
+    }
+    //회원 정보 수정
+    public void updateUser(UserUpdateRequestDto requestDto, String email) throws Exception {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        if (requestDto.getNickname() != null && !requestDto.getNickname().isBlank()) {
+            if (userRepository.findByNickname(requestDto.getNickname()).isPresent()) {
+                throw new Exception("이미 존재하는 닉네임입니다.");
+            }
+            user.updateNickname(requestDto.getNickname());
+        }
+        if (requestDto.getPassword() != null && !requestDto.getPassword().isBlank()) {
+            user.updatePassword(passwordEncoder.encode(requestDto.getPassword()));
+        }
+    }
+
+    //회원 탈퇴
+    public void deleteUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+        // Refresh Token 삭제
+        refreshTokenRepository.findByUser(user)
+                .ifPresent(refreshTokenRepository::delete);
+
+        // User Soft Delete
+        user.withdraw();
+        userRepository.save(user);
     }
 }
