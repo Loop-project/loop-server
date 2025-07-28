@@ -1,4 +1,4 @@
-package server.loop.user.entity;
+package server.loop.domain.user.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;

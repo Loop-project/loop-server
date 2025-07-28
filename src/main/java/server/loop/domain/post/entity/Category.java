@@ -1,4 +1,4 @@
-package server.loop.post.entity;
+package server.loop.domain.post.entity;
 
 public enum Category {
     FREE,  // 자유게시판

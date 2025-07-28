@@ -1,4 +1,4 @@
-package server.loop.post.entity;
+package server.loop.domain.post.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
-import server.loop.user.entity.User;
+import server.loop.domain.user.entity.User;
 
 import java.time.LocalDateTime;
 
