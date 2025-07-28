@@ -53,6 +53,9 @@ public class Comment {
     @OneToMany(mappedBy = "parent", orphanRemoval = true)
     private List<Comment> children = new ArrayList<>();
 
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
     @Builder
     public Comment(String content, User author, Post post, Comment parent) {
         this.content = content;
@@ -64,5 +67,9 @@ public class Comment {
     // 수정, 삭제 상태 변경을 위한 메소드
     public void update(String content) {
         this.content = content;
+    }
+
+    public void softDelete() {
+        this.isDeleted = true;
     }
 }

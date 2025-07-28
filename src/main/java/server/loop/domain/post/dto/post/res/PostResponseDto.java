@@ -20,24 +20,17 @@ public class PostResponseDto {
     private final boolean likedByUser;
 
     public PostResponseDto(Post post) {
-        this.id = post.getId();
-        this.title = post.getTitle();
-        this.content = post.getContent();
-        this.authorNickname = post.getAuthor().getNickname(); // 작성자 닉네임
-        this.category = post.getCategory();
-        this.createdAt = post.getCreatedAt();
-        this.updatedAt = post.getUpdatedAt();
-        this.likeCount = post.getLikes().size();
-        this.commentCount = post.getComments().size();
-        this.likedByUser = false;
+        this(post, false);
     }
 
-    //상세 조회용
+    // 상세 조회용
     public PostResponseDto(Post post, boolean likedByUser) {
         this.id = post.getId();
         this.title = post.getTitle();
         this.content = post.getContent();
-        this.authorNickname = post.getAuthor().getNickname();
+        this.authorNickname = (post.getAuthor() != null)
+                ? post.getAuthor().getNickname()
+                : "탈퇴한 회원입니다.";
         this.category = post.getCategory();
         this.createdAt = post.getCreatedAt();
         this.updatedAt = post.getUpdatedAt();
