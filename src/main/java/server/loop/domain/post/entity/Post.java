@@ -5,12 +5,17 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import server.loop.domain.user.entity.User;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Getter
@@ -36,6 +41,12 @@ public class Post {
     @Column(name = "content", nullable = false)
     private String content; // 내용
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostLike> likes = new ArrayList<>();
+
+    @Column(name = "report_count", nullable = false)
+    private int reportCount = 0; // 신고 횟수
+
     @CreatedDate
     @Column(name = "created_at")
     private LocalDateTime createdAt; // 생성 시간
@@ -44,6 +55,8 @@ public class Post {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt; // 수정 시간
 
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false; //삭제
     @Builder
     public Post(User author, Category category, String title, String content) {
         this.author = author;
@@ -56,5 +69,12 @@ public class Post {
         this.category = category;
         this.title = title;
         this.content = content;
+    }
+
+    public void addReport() {
+        this.reportCount++;
+    }
+    public void softDelete() {
+        this.isDeleted = true;
     }
 }
