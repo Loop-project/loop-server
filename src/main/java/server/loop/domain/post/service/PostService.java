@@ -2,19 +2,23 @@ package server.loop.domain.post.service;
 
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.loop.domain.post.dto.post.req.PostCreateRequestDto;
 import server.loop.domain.post.dto.post.req.PostUpdateRequestDto;
 import server.loop.domain.post.dto.post.res.PostResponseDto;
+import server.loop.domain.post.dto.post.res.SliceResponseDto;
+import server.loop.domain.post.entity.Category;
 import server.loop.domain.post.entity.Post;
+import server.loop.domain.post.entity.repository.PostLikeRepository;
 import server.loop.domain.post.entity.repository.PostRepository;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
 
 import java.nio.file.AccessDeniedException;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -23,8 +27,9 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final PostLikeRepository postLikeRepository;
 
-    // 1. 게시글 생성
+    // 게시글 생성
     public Long createPost(PostCreateRequestDto requestDto, String email) {
         User author = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
@@ -40,23 +45,37 @@ public class PostService {
         return savedPost.getId();
     }
 
-    // 2. 게시글 단건 조회
+    // 2. 게시글 단건 조회 (수정)
     @Transactional(readOnly = true)
-    public PostResponseDto getPost(Long postId) {
+    // 파라미터로 userDetails 대신 email을 직접 받도록 변경
+    public PostResponseDto getPost(Long postId, String email) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
-        return new PostResponseDto(post);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        boolean isLiked = postLikeRepository.existsByUserAndPost(user, post);
+        return new PostResponseDto(post, isLiked);
     }
 
-    // 3. 게시글 목록 조회
+    // 게시글 카테고리 별 조회
     @Transactional(readOnly = true)
-    public List<PostResponseDto> getAllPosts() {
-        return postRepository.findAll().stream()
-                .map(PostResponseDto::new)
-                .collect(Collectors.toList());
+    public SliceResponseDto<PostResponseDto> getPostsSlice(Category category, Pageable pageable) {
+        Slice<Post> postSlice;
+        if (category != null) {
+            postSlice = postRepository.findAllActivePostsByCategory(category, pageable);
+        } else {
+            postSlice = postRepository.findAllActivePosts(pageable);
+        }
+
+        // Slice<Post>를 Slice<PostResponseDto>로 변환
+        Slice<PostResponseDto> responseDtoSlice = postSlice.map(PostResponseDto::new);
+
+        return new SliceResponseDto<>(responseDtoSlice);
     }
 
-    // 4. 게시글 수정
+    // 게시글 수정
     public Long updatePost(Long postId, PostUpdateRequestDto requestDto, String email) throws AccessDeniedException {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
@@ -71,7 +90,7 @@ public class PostService {
         return postId;
     }
 
-    // 5. 게시글 삭제
+    // 게시글 삭제
     public void deletePost(Long postId, String email) throws AccessDeniedException {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));

@@ -16,6 +16,8 @@ public class PostResponseDto {
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     private final int likeCount;
+    private final int commentCount;
+    private final boolean likedByUser;
 
     public PostResponseDto(Post post) {
         this.id = post.getId();
@@ -26,5 +28,21 @@ public class PostResponseDto {
         this.createdAt = post.getCreatedAt();
         this.updatedAt = post.getUpdatedAt();
         this.likeCount = post.getLikes().size();
+        this.commentCount = post.getComments().size();
+        this.likedByUser = false;
+    }
+
+    //상세 조회용
+    public PostResponseDto(Post post, boolean likedByUser) {
+        this.id = post.getId();
+        this.title = post.getTitle();
+        this.content = post.getContent();
+        this.authorNickname = post.getAuthor().getNickname();
+        this.category = post.getCategory();
+        this.createdAt = post.getCreatedAt();
+        this.updatedAt = post.getUpdatedAt();
+        this.likeCount = post.getLikes().size();
+        this.commentCount = post.getComments().size();
+        this.likedByUser = likedByUser;
     }
 }

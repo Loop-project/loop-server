@@ -1,6 +1,8 @@
 package server.loop.domain.post.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -8,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 import server.loop.domain.post.dto.post.req.PostCreateRequestDto;
 import server.loop.domain.post.dto.post.req.PostUpdateRequestDto;
 import server.loop.domain.post.dto.post.res.PostResponseDto;
+import server.loop.domain.post.dto.post.res.SliceResponseDto;
+import server.loop.domain.post.entity.Category;
 import server.loop.domain.post.service.PostService;
 
 import java.nio.file.AccessDeniedException;
@@ -31,16 +35,10 @@ public class PostController {
 
     // 2. 게시글 단건 조회
     @GetMapping("/{postId}")
-    public ResponseEntity<PostResponseDto> getPost(@PathVariable Long postId) {
-        PostResponseDto postResponseDto = postService.getPost(postId);
+    public ResponseEntity<PostResponseDto> getPost(@PathVariable Long postId,
+                                                   @AuthenticationPrincipal UserDetails userDetails) {
+        PostResponseDto postResponseDto = postService.getPost(postId, userDetails.getUsername());
         return ResponseEntity.ok(postResponseDto);
-    }
-
-    // 3. 게시글 목록 조회
-    @GetMapping
-    public ResponseEntity<List<PostResponseDto>> getAllPosts() {
-        List<PostResponseDto> posts = postService.getAllPosts();
-        return ResponseEntity.ok(posts);
     }
 
     // 4. 게시글 수정
@@ -58,5 +56,15 @@ public class PostController {
                                              @AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
         postService.deletePost(postId, userDetails.getUsername());
         return ResponseEntity.ok("게시글이 성공적으로 삭제되었습니다. ID: "+postId);
+    }
+
+    @GetMapping
+    public ResponseEntity<SliceResponseDto<PostResponseDto>> getPostsSlice(
+            @RequestParam(required = false) Category category,
+            // 기본 20개씩, 최신순으로 정렬
+            @PageableDefault(size = 20) Pageable pageable) {
+
+        SliceResponseDto<PostResponseDto> result = postService.getPostsSlice(category, pageable);
+        return ResponseEntity.ok(result);
     }
 }

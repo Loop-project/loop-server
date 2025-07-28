@@ -34,13 +34,12 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // --- 바로 이 부분을 수정합니다 ---
+                        // 회원가입, 로그인, 토큰 재발급 API를 제외한 모든 요청은 인증을 요구하도록 변경
                         .requestMatchers("/api/users/signup", "/api/users/login", "/api/token/reissue").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/posts/**", "/api/posts/{postId}/comments").permitAll()
                         .anyRequest().authenticated()
                 )
-                // 직접 만든 JwtAuthenticationFilter를 UsernamePasswordAuthenticationFilter 앞에 추가
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService), UsernamePasswordAuthenticationFilter.class);
-        // -----------------
 
         return http.build();
     }
