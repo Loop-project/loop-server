@@ -24,7 +24,7 @@ public class PostController {
 
     private final PostService postService;
 
-    // 1. 게시글 생성
+    // 게시글 생성
     @PostMapping
     public ResponseEntity<String> createPost(@RequestBody PostCreateRequestDto requestDto,
                                              @AuthenticationPrincipal UserDetails userDetails) {
@@ -33,7 +33,7 @@ public class PostController {
         return ResponseEntity.ok("게시글이 성공적으로 생성되었습니다. ID: " + postId);
     }
 
-    // 2. 게시글 단건 조회
+    // 게시글 단건 조회
     @GetMapping("/{postId}")
     public ResponseEntity<PostResponseDto> getPost(@PathVariable Long postId,
                                                    @AuthenticationPrincipal UserDetails userDetails) {
@@ -41,7 +41,7 @@ public class PostController {
         return ResponseEntity.ok(postResponseDto);
     }
 
-    // 4. 게시글 수정
+    // 게시글 수정
     @PutMapping("/{postId}")
     public ResponseEntity<String> updatePost(@PathVariable Long postId,
                                              @RequestBody PostUpdateRequestDto requestDto,
@@ -50,7 +50,7 @@ public class PostController {
         return ResponseEntity.ok("게시글이 성공적으로 수정되었습니다. ID: "+postId);
     }
 
-    // 5. 게시글 삭제
+    // 게시글 삭제
     @DeleteMapping("/{postId}")
     public ResponseEntity<String> deletePost(@PathVariable Long postId,
                                              @AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
@@ -58,6 +58,7 @@ public class PostController {
         return ResponseEntity.ok("게시글이 성공적으로 삭제되었습니다. ID: "+postId);
     }
 
+    // 카테고리 별 게시글 조회
     @GetMapping
     public ResponseEntity<SliceResponseDto<PostResponseDto>> getPostsSlice(
             @RequestParam(required = false) Category category,
