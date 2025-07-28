@@ -2,6 +2,7 @@ package server.loop.domain.post.service;
 
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.loop.domain.post.dto.post.req.PostCreateRequestDto;
 import server.loop.domain.post.dto.post.req.PostUpdateRequestDto;
+import server.loop.domain.post.dto.post.res.PostDetailResponseDto;
 import server.loop.domain.post.dto.post.res.PostResponseDto;
 import server.loop.domain.post.dto.post.res.SliceResponseDto;
 import server.loop.domain.post.entity.Category;
@@ -19,6 +21,7 @@ import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
 
 import java.nio.file.AccessDeniedException;
+import java.util.NoSuchElementException;
 
 @Service
 @Transactional
@@ -45,18 +48,14 @@ public class PostService {
         return savedPost.getId();
     }
 
-    // 2. 게시글 단건 조회 (수정)
+    // 상세 조회
     @Transactional(readOnly = true)
-    // 파라미터로 userDetails 대신 email을 직접 받도록 변경
-    public PostResponseDto getPost(Long postId, String email) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+    public PostDetailResponseDto getPost(Long postId, User currentUser) {
+        Post post = postRepository.findActivePostById(postId)
+                .orElseThrow(() -> new NoSuchElementException("게시글을 찾을 수 없습니다."));
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-        boolean isLiked = postLikeRepository.existsByUserAndPost(user, post);
-        return new PostResponseDto(post, isLiked);
+        boolean likedByUser = post.isLikedBy(currentUser);
+        return new PostDetailResponseDto(post, likedByUser);
     }
 
     // 게시글 카테고리 별 조회

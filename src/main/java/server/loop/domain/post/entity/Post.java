@@ -60,6 +60,13 @@ public class Post {
 
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false; //삭제
+    public boolean isLikedBy(User user) {
+        if (user == null) {
+            return false;
+        }
+        return likes.stream()
+                .anyMatch(like -> like.getUser().getId().equals(user.getId()));
+    }
     @Builder
     public Post(User author, Category category, String title, String content) {
         this.author = author;

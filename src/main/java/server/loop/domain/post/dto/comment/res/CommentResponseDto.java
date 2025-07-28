@@ -17,10 +17,12 @@ public class CommentResponseDto {
 
     public CommentResponseDto(Comment comment) {
         this.commentId = comment.getId();
-        this.authorNickname = comment.getAuthor().getNickname();
+        this.authorNickname = (comment.getAuthor() == null || comment.getAuthor().isDeleted())
+                ? "탈퇴한 회원입니다."
+                : comment.getAuthor().getNickname();
         this.createdAt = comment.getCreatedAt();
 
-        if(comment.isDeleted()) {
+        if (comment.isDeleted()) {
             this.content = "삭제된 댓글입니다.";
             this.replies = List.of(); // 빈 리스트
         } else {
