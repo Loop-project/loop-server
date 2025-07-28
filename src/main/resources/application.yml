@@ -1,21 +1,17 @@
 # 서버 포트 설정 (선택 사항)
+# 서버 포트 설정
 server:
   port: 8080
 
 # Spring 기본 설정
 spring:
-  # 데이터베이스 설정 (h2, MySQL, PostgreSQL 등)
+  # 데이터베이스 설정
   datasource:
-  # 초기 개발 시 사용할 H2 인메모리 DB 설정 (주석 처리)
-  # url: jdbc:h2:mem:testdb
-  # driver-class-name: org.h2.Driver
-  # username: sa
-  # password:
-
-  # 실제 사용할 DB 설정 예시 (MySQL)
-  # url: jdbc:mysql://[DB_HOST]:[DB_PORT]/[DB_NAME]?serverTimezone=UTC&characterEncoding=UTF-8
-  # username: [DB_USERNAME]
-  # password: [DB_PASSWORD]
+    driver-class-name: com.mysql.cj.jdbc.Driver # MySQL 드라이버 클래스
+    # DB 이름 'loop', 타임존 'Asia/Seoul'로 설정
+    url: jdbc:mysql://localhost:3306/loop?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: root  # 여기에 실제 DB 사용자 이름을 입력하세요. (예: root)
+    password: thsutleo12@  # 여기에 실제 DB 비밀번호를 입력하세요.
 
   # JPA (Java Persistence API) 설정
   jpa:
@@ -31,4 +27,4 @@ spring:
 jwt:
   secret: LoopProjectSecretKeyForAuthenticationAndAuthorizationLoopLoopProject
   access-token-validity-in-seconds: 3600 # 1시간
-  refresh-token-validity-in-seconds: 604800 # 7일 (7 * 24 * 60 * 60 = 604800초)
+  refresh-token-validity-in-seconds: 604800 # 7일

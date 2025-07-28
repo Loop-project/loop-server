@@ -28,7 +28,10 @@ public class UserService {
         if (userRepository.findByEmail(signUpDto.getEmail()).isPresent()) {
             throw new Exception("이미 존재하는 이메일입니다.");
         }
-
+        //닉네임 중복 체크
+        if (userRepository.findByNickname(signUpDto.getNickname()).isPresent()) {
+            throw new Exception("이미 존재하는 닉네임입니다.");
+        }
         User user = User.builder()
                 .email(signUpDto.getEmail())
                 .password(passwordEncoder.encode(signUpDto.getPassword())) // 비밀번호 암호화
@@ -41,7 +44,6 @@ public class UserService {
         return savedUser.getId();
     }
 
-    @Transactional(readOnly = true)
     public TokenDto login(UserLoginDto loginDto) {
         User user = userRepository.findByEmail(loginDto.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
