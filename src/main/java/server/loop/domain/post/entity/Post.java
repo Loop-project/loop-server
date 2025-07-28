@@ -45,15 +45,15 @@ public class Post {
     private LocalDateTime updatedAt; // 수정 시간
 
     @Builder
-    public Post(User author, String title, String content) {
+    public Post(User author, Category category, String title, String content) {
         this.author = author;
         this.category = category;
         this.title = title;
         this.content = content;
     }
 
-    // 수정 기능을 위한 메소드
-    public void update(String title, String content) {
+    public void update(Category category, String title, String content) {
+        this.category = category;
         this.title = title;
         this.content = content;
     }
