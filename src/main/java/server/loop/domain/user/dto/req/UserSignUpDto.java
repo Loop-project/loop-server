@@ -24,4 +24,10 @@ public class UserSignUpDto {
 
     @Schema(description = "성별 (MALE 또는 FEMALE)", example = "MALE")
     private Gender gender;
+
+    // --- 약관 동의 필드 추가 ---
+    private boolean agreedToTermsOfService;
+    private boolean agreedToPrivacyPolicy;
+    private boolean agreedToMarketing; // 선택 약관
+    // -----------------------
 }
