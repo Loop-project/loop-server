@@ -34,9 +34,22 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // --- 바로 이 부분을 수정합니다 ---
-                        // 회원가입, 로그인, 토큰 재발급 API를 제외한 모든 요청은 인증을 요구하도록 변경
-                        .requestMatchers("/api/users/signup", "/api/users/login", "/api/token/reissue").permitAll()
+                        // Swagger 관련 경로는 인증 없이 접근 허용
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/webjars/**",
+                                "/swagger-resources/**",
+                                "/swagger-resources"
+                        ).permitAll()
+                        // 회원가입, 로그인, 토큰 재발급 API도 허용
+                        .requestMatchers(
+                                "/api/users/signup",
+                                "/api/users/login",
+                                "/api/token/reissue"
+                        ).permitAll()
+                        // 나머지 요청은 인증 필요
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService), UsernamePasswordAuthenticationFilter.class);
