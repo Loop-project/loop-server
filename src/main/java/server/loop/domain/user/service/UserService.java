@@ -16,6 +16,8 @@ import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
 import server.loop.global.security.JwtTokenProvider;
 
+import java.time.LocalDateTime;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -35,16 +37,24 @@ public class UserService {
         if (userRepository.findByNickname(signUpDto.getNickname()).isPresent()) {
             throw new Exception("이미 존재하는 닉네임입니다.");
         }
+        if (!signUpDto.isAgreedToTermsOfService() || !signUpDto.isAgreedToPrivacyPolicy()) {
+            throw new IllegalArgumentException("필수 약관에 동의해야 합니다.");
+        }
+        LocalDateTime now = LocalDateTime.now();
+
         User user = User.builder()
                 .email(signUpDto.getEmail())
-                .password(passwordEncoder.encode(signUpDto.getPassword())) // 비밀번호 암호화
+                .password(passwordEncoder.encode(signUpDto.getPassword()))
                 .nickname(signUpDto.getNickname())
                 .age(signUpDto.getAge())
                 .gender(signUpDto.getGender())
+                .termsOfServiceAgreedAt(now) // 필수 약관 동의 시간 기록
+                .privacyPolicyAgreedAt(now)  // 필수 약관 동의 시간 기록
+                .marketingConsentAgreedAt(signUpDto.isAgreedToMarketing() ? now : null) // 선택 약관 처리
                 .build();
 
-        User savedUser = userRepository.save(user);
-        return savedUser.getId();
+        userRepository.save(user);
+        return user.getId();
     }
 
     public TokenDto login(UserLoginDto loginDto) {

@@ -51,6 +51,16 @@ public class User {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    // --- 약관 동의 필드 추가 ---
+    @Column(nullable = false)
+    private LocalDateTime termsOfServiceAgreedAt; // 이용약관 동의 일시
+
+    @Column(nullable = false)
+    private LocalDateTime privacyPolicyAgreedAt; // 개인정보 처리방침 동의 일시
+
+    private LocalDateTime marketingConsentAgreedAt; // (선택) 마케팅 정보 수신 동의 일시
+    // -----------------------
+
     @OneToMany(mappedBy = "author")
     private List<Post> posts = new ArrayList<>();
 
@@ -58,12 +68,16 @@ public class User {
     private List<Comment> comments = new ArrayList<>();
 
     @Builder
-    public User(String email, String password, String nickname, Integer age, Gender gender) {
+    public User(String email, String password, String nickname, Integer age, Gender gender,
+                LocalDateTime termsOfServiceAgreedAt, LocalDateTime privacyPolicyAgreedAt, LocalDateTime marketingConsentAgreedAt) {
         this.email = email;
         this.password = password;
         this.nickname = nickname;
         this.age = age;
         this.gender = gender;
+        this.termsOfServiceAgreedAt = termsOfServiceAgreedAt;
+        this.privacyPolicyAgreedAt = privacyPolicyAgreedAt;
+        this.marketingConsentAgreedAt = marketingConsentAgreedAt;
     }
 
     public void updateNickname(String nickname) {
