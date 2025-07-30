@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import server.loop.domain.post.dto.post.req.PostCreateRequestDto;
 import server.loop.domain.post.dto.post.req.PostUpdateRequestDto;
 import server.loop.domain.post.dto.post.res.PostDetailResponseDto;
@@ -18,7 +19,9 @@ import server.loop.domain.post.entity.Category;
 import server.loop.domain.post.service.PostService;
 import server.loop.domain.user.entity.User;
 
+import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.List;
 
 @Tag(name = "Post", description = "게시글 관리 API")
 @RestController
@@ -29,12 +32,14 @@ public class PostController {
     private final PostService postService;
 
     // 게시글 생성
-    @Operation(summary = "게시글 생성", description = "새로운 게시글을 작성합니다.")
-    @PostMapping
-    public ResponseEntity<String> createPost(@RequestBody PostCreateRequestDto requestDto,
-                                             @AuthenticationPrincipal UserDetails userDetails) {
-        // userDetails.getUsername() 은 CustomUserDetailsService 에서 우리가 넣어준 email 입니다.
-        Long postId = postService.createPost(requestDto, userDetails.getUsername());
+    @Operation(summary = "게시글 생성", description = "새로운 게시글을 작성하고 이미지 파일을 업로드합니다.")
+    @PostMapping(consumes = "multipart/form-data") // 1. 요청 타입을 multipart/form-data로 지정
+    public ResponseEntity<String> createPost(
+            @RequestPart("requestDto") PostCreateRequestDto requestDto, // 2. JSON 데이터 부분
+            @RequestPart(value = "images", required = false) List<MultipartFile> images, // 3. 파일 부분
+            @AuthenticationPrincipal UserDetails userDetails) throws IOException {
+
+        Long postId = postService.createPost(requestDto, images, userDetails.getUsername());
         return ResponseEntity.ok("게시글이 성공적으로 생성되었습니다. ID: " + postId);
     }
 

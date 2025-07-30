@@ -8,6 +8,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import server.loop.domain.post.dto.post.req.PostCreateRequestDto;
 import server.loop.domain.post.dto.post.req.PostUpdateRequestDto;
 import server.loop.domain.post.dto.post.res.PostDetailResponseDto;
@@ -15,12 +16,17 @@ import server.loop.domain.post.dto.post.res.PostResponseDto;
 import server.loop.domain.post.dto.post.res.SliceResponseDto;
 import server.loop.domain.post.entity.Category;
 import server.loop.domain.post.entity.Post;
+import server.loop.domain.post.entity.PostImage;
+import server.loop.domain.post.entity.repository.PostImageRepository;
 import server.loop.domain.post.entity.repository.PostLikeRepository;
 import server.loop.domain.post.entity.repository.PostRepository;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
+import server.loop.global.config.s3.S3UploadService;
 
+import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
@@ -31,21 +37,35 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final PostLikeRepository postLikeRepository;
+    private final S3UploadService s3UploadService; // S3 서비스 주입
+    private final PostImageRepository postImageRepository; // PostImage 리포지토리 주입
 
     // 게시글 생성
-    public Long createPost(PostCreateRequestDto requestDto, String email) {
+    public Long createPost(PostCreateRequestDto requestDto, List<MultipartFile> images, String email) throws IOException {
         User author = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
+        // 1. 게시글의 텍스트 내용(제목, 본문 등)을 먼저 DB에 저장합니다.
         Post post = Post.builder()
                 .author(author)
                 .title(requestDto.getTitle())
                 .content(requestDto.getContent())
                 .category(requestDto.getCategory())
                 .build();
+        postRepository.save(post);
 
-        Post savedPost = postRepository.save(post);
-        return savedPost.getId();
+        // 2. 이미지 파일 목록이 비어있지 않다면, 파일들을 S3에 업로드하고 그 URL을 DB에 저장합니다.
+        if (images != null && !images.isEmpty()) {
+            for (MultipartFile image : images) {
+                // S3에 이미지 업로드
+                String imageUrl = s3UploadService.uploadFile(image, "post-images");
+                // PostImage 객체를 생성하여 DB에 저장
+                PostImage postImage = new PostImage(imageUrl, post);
+                postImageRepository.save(postImage);
+            }
+        }
+
+        return post.getId();
     }
 
     // 상세 조회
