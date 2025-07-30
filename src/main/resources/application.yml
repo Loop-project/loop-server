@@ -28,3 +28,12 @@ jwt:
   secret: LoopProjectSecretKeyForAuthenticationAndAuthorizationLoopLoopProject
   access-token-validity-in-seconds: 3600 # 1시간
   refresh-token-validity-in-seconds: 604800 # 7일
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
