@@ -48,6 +48,16 @@ public class User extends BaseEntity {
 
     private LocalDateTime marketingConsentAgreedAt;
 
+    // --- 약관 동의 필드 추가 ---
+    @Column(nullable = false)
+    private LocalDateTime termsOfServiceAgreedAt; // 이용약관 동의 일시
+
+    @Column(nullable = false)
+    private LocalDateTime privacyPolicyAgreedAt; // 개인정보 처리방침 동의 일시
+
+    private LocalDateTime marketingConsentAgreedAt; // (선택) 마케팅 정보 수신 동의 일시
+    // -----------------------
+
     @OneToMany(mappedBy = "author")
     private List<Post> posts = new ArrayList<>();
 
