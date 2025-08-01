@@ -17,23 +17,22 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Modifying
     @Query("UPDATE Post p SET p.reportCount = p.reportCount + 1 WHERE p.id = :postId")
-    void incrementReportCount(@Param("postId") Long postId);
+    void incrementReportCount(@Param("postId") Long postId); // 필요 시 Optimistic Lock 추가
 
-    @Query("SELECT p FROM Post p WHERE p.id = :id AND p.isDeleted = false")
-    Optional<Post> findActivePostById(@Param("id") Long id);
+    Optional<Post> findByIdAndIsDeletedFalse(Long id);
 
-    @Query("SELECT p FROM Post p WHERE p.isDeleted = false ORDER BY p.createdAt DESC")
+    @Query("SELECT p FROM Post p ORDER BY p.createdAt DESC")
     Slice<Post> findAllActivePosts(Pageable pageable);
 
-    @Query("SELECT p FROM Post p WHERE p.category = :category AND p.isDeleted = false ORDER BY p.createdAt DESC")
+    @Query("SELECT p FROM Post p WHERE p.category = :category ORDER BY p.createdAt DESC")
     Slice<Post> findAllActivePostsByCategory(@Param("category") Category category, Pageable pageable);
 
     @Query("SELECT p FROM Post p " +
             "LEFT JOIN FETCH p.comments c " +
             "LEFT JOIN FETCH c.author " +
-            "WHERE p.id = :id AND p.isDeleted = false")
+            "WHERE p.id = :id")
     Optional<Post> findActivePostWithCommentsById(@Param("id") Long id);
 
-    @Query("SELECT p FROM Post p WHERE p.author = :author AND p.isDeleted = false ORDER BY p.createdAt DESC")
+    @Query("SELECT p FROM Post p WHERE p.author = :author ORDER BY p.createdAt DESC")
     Slice<Post> findActivePostsByAuthor(@Param("author") User author, Pageable pageable);
 }

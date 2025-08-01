@@ -34,7 +34,9 @@ public class LikeService {
                 })
                 .orElseGet(() -> {
                     // 좋아요를 누르지 않았다면 -> 좋아요 추가
-                    postLikeRepository.save(new PostLike(user, post));
+                    PostLike like = new PostLike(user);
+                    like.setPost(post); // 연관관계 편의 메서드 사용
+                    postLikeRepository.save(like);
                     return "좋아요를 눌렀습니다.";
                 });
     }

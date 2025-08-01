@@ -27,7 +27,7 @@ public class TokenService {
         String newAccessToken = jwtTokenProvider.createAccessToken(foundRefreshToken.getUser().getEmail());
 
         String newRefreshToken = jwtTokenProvider.createRefreshToken(foundRefreshToken.getUser().getEmail());
-        foundRefreshToken.update(newRefreshToken);
+        foundRefreshToken.updateToken(newRefreshToken);
 
         return new TokenDto(newAccessToken, newRefreshToken);
     }

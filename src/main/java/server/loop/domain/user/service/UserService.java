@@ -7,14 +7,14 @@ import org.springframework.transaction.annotation.Transactional;
 import server.loop.domain.auth.dto.TokenDto;
 import server.loop.domain.auth.entity.RefreshToken;
 import server.loop.domain.auth.entity.repo.RefreshTokenRepository;
-import server.loop.domain.post.entity.Comment;
-import server.loop.domain.post.entity.Post;
 import server.loop.domain.user.dto.req.UserLoginDto;
 import server.loop.domain.user.dto.req.UserSignUpDto;
 import server.loop.domain.user.dto.req.UserUpdateRequestDto;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
 import server.loop.global.security.JwtTokenProvider;
+
+import java.time.LocalDateTime;
 
 @Service
 @Transactional
@@ -35,16 +35,24 @@ public class UserService {
         if (userRepository.findByNickname(signUpDto.getNickname()).isPresent()) {
             throw new Exception("이미 존재하는 닉네임입니다.");
         }
+        if (!signUpDto.isAgreedToTermsOfService() || !signUpDto.isAgreedToPrivacyPolicy()) {
+            throw new IllegalArgumentException("필수 약관에 동의해야 합니다.");
+        }
+        LocalDateTime now = LocalDateTime.now();
+
         User user = User.builder()
                 .email(signUpDto.getEmail())
-                .password(passwordEncoder.encode(signUpDto.getPassword())) // 비밀번호 암호화
+                .password(passwordEncoder.encode(signUpDto.getPassword()))
                 .nickname(signUpDto.getNickname())
                 .age(signUpDto.getAge())
                 .gender(signUpDto.getGender())
+                .termsOfServiceAgreedAt(now) // 필수 약관 동의 시간 기록
+                .privacyPolicyAgreedAt(now)  // 필수 약관 동의 시간 기록
+                .marketingConsentAgreedAt(signUpDto.isAgreedToMarketing() ? now : null) // 선택 약관 처리
                 .build();
 
-        User savedUser = userRepository.save(user);
-        return savedUser.getId();
+        userRepository.save(user);
+        return user.getId();
     }
 
     public TokenDto login(UserLoginDto loginDto) {
@@ -62,7 +70,7 @@ public class UserService {
         // 2. Refresh Token을 DB에 저장 (이미 있으면 업데이트, 없으면 새로 생성)
         refreshTokenRepository.findByUser(user)
                 .ifPresentOrElse(
-                        (token) -> token.update(refreshToken),
+                        (token) -> token.updateToken(refreshToken),
                         () -> refreshTokenRepository.save(new RefreshToken(user, refreshToken))
                 );
 

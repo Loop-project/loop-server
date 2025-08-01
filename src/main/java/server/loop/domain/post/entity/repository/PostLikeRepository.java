@@ -12,10 +12,13 @@ import server.loop.domain.user.entity.User;
 import java.util.Optional;
 
 public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
+
     Optional<PostLike> findByUserAndPost(User user, Post post);
-
     boolean existsByUserAndPost(User user, Post post);
-    @Query("SELECT pl.post FROM PostLike pl WHERE pl.user = :user AND pl.post.isDeleted = false ORDER BY pl.post.createdAt DESC")
-    Slice<Post> findActivePostsLikedByUser(@Param("user") User user, Pageable pageable);
 
+    @Query("SELECT pl.post FROM PostLike pl " +
+            "LEFT JOIN FETCH pl.post.author " +   // 작성자 Fetch
+            "WHERE pl.user = :user AND pl.post.isDeleted = false " +
+            "ORDER BY pl.post.createdAt DESC")
+    Slice<Post> findActivePostsLikedByUser(@Param("user") User user, Pageable pageable);
 }
