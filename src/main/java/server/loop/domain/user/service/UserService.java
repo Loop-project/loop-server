@@ -7,8 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import server.loop.domain.auth.dto.TokenDto;
 import server.loop.domain.auth.entity.RefreshToken;
 import server.loop.domain.auth.entity.repo.RefreshTokenRepository;
-import server.loop.domain.post.entity.Comment;
-import server.loop.domain.post.entity.Post;
 import server.loop.domain.user.dto.req.UserLoginDto;
 import server.loop.domain.user.dto.req.UserSignUpDto;
 import server.loop.domain.user.dto.req.UserUpdateRequestDto;
@@ -72,7 +70,7 @@ public class UserService {
         // 2. Refresh Token을 DB에 저장 (이미 있으면 업데이트, 없으면 새로 생성)
         refreshTokenRepository.findByUser(user)
                 .ifPresentOrElse(
-                        (token) -> token.update(refreshToken),
+                        (token) -> token.updateToken(refreshToken),
                         () -> refreshTokenRepository.save(new RefreshToken(user, refreshToken))
                 );
 

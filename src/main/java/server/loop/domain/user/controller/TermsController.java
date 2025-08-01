@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import server.loop.domain.user.dto.res.TermsResponseDto;
-import server.loop.domain.user.entity.TermsService;
 import server.loop.domain.user.entity.TermsType;
+import server.loop.domain.user.service.TermsService;
 
 @Tag(name = "Terms", description = "약관 관리 API")
 @RestController

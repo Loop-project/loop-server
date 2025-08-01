@@ -54,14 +54,11 @@ public class PostService {
                 .build();
         postRepository.save(post);
 
-        // 2. 이미지 파일 목록이 비어있지 않다면, 파일들을 S3에 업로드하고 그 URL을 DB에 저장합니다.
         if (images != null && !images.isEmpty()) {
             for (MultipartFile image : images) {
-                // S3에 이미지 업로드
                 String imageUrl = s3UploadService.uploadFile(image, "post-images");
-                // PostImage 객체를 생성하여 DB에 저장
-                PostImage postImage = new PostImage(imageUrl, post);
-                postImageRepository.save(postImage);
+                PostImage postImage = new PostImage(imageUrl);
+                post.addImage(postImage); // 편의 메서드로 Post-Image 관계 세팅
             }
         }
 
@@ -71,7 +68,7 @@ public class PostService {
     // 상세 조회
     @Transactional(readOnly = true)
     public PostDetailResponseDto getPost(Long postId, User currentUser) {
-        Post post = postRepository.findActivePostById(postId)
+        Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NoSuchElementException("게시글을 찾을 수 없습니다."));
 
         boolean likedByUser = post.isLikedBy(currentUser);
@@ -113,12 +110,9 @@ public class PostService {
     public void deletePost(Long postId, String email) throws AccessDeniedException {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
-
-        // 작성자 본인인지 확인
         if (!post.getAuthor().getEmail().equals(email)) {
             throw new AccessDeniedException("게시글을 삭제할 권한이 없습니다.");
         }
-
-        postRepository.delete(post);
+        post.softDelete(); // Soft Delete로 변경
     }
 }

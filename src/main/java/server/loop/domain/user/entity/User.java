@@ -5,23 +5,19 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Where;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import server.loop.domain.post.entity.Comment;
 import server.loop.domain.post.entity.Post;
+import server.loop.global.common.BaseEntity;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-//@Where(clause = "deleted_at IS NULL")
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users")
-public class User {
+public class User extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,21 +40,14 @@ public class User {
     @Column(name = "gender")
     private Gender gender;
 
-    @CreatedDate
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    // --- 약관 동의 필드 추가 ---
     @Column(nullable = false)
-    private LocalDateTime termsOfServiceAgreedAt; // 이용약관 동의 일시
+    private LocalDateTime termsOfServiceAgreedAt;
 
     @Column(nullable = false)
-    private LocalDateTime privacyPolicyAgreedAt; // 개인정보 처리방침 동의 일시
+    private LocalDateTime privacyPolicyAgreedAt;
 
-    private LocalDateTime marketingConsentAgreedAt; // (선택) 마케팅 정보 수신 동의 일시
+    private LocalDateTime marketingConsentAgreedAt;
+
     // -----------------------
 
     @OneToMany(mappedBy = "author")
@@ -66,6 +55,13 @@ public class User {
 
     @OneToMany(mappedBy = "author")
     private List<Comment> comments = new ArrayList<>();
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
 
     @Builder
     public User(String email, String password, String nickname, Integer age, Gender gender,
@@ -80,6 +76,18 @@ public class User {
         this.marketingConsentAgreedAt = marketingConsentAgreedAt;
     }
 
+    // === 연관관계 편의 메서드 ===
+    public void addPost(Post post) {
+        posts.add(post);
+        post.setAuthor(this);
+    }
+
+    public void addComment(Comment comment) {
+        comments.add(comment);
+        comment.setAuthor(this);
+    }
+
+    // === 도메인 로직 ===
     public void updateNickname(String nickname) {
         this.nickname = nickname;
     }
@@ -91,12 +99,9 @@ public class User {
     // 탈퇴 처리
     public void withdraw() {
         this.deletedAt = LocalDateTime.now();
-        this.email = null; // 이메일 초기화 (재가입 가능)
-        this.password = null; // 비밀번호 초기화
-        this.nickname = "탈퇴한 회원입니다." + this.id;
-    }
-
-    public boolean isDeleted() {
-        return deletedAt != null;
+        this.email = null;
+        this.password = null;
+        this.nickname = "탈퇴한 회원(" + this.id + ")";
+        this.softDelete();
     }
 }
