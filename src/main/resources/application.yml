@@ -1,33 +1,42 @@
-# 서버 포트 설정 (선택 사항)
-# 서버 포트 설정
 server:
   port: 8080
 
-# Spring 기본 설정
 spring:
-  # 데이터베이스 설정
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver # MySQL 드라이버 클래스
-    # DB 이름 'loop', 타임존 'Asia/Seoul'로 설정
-    url: jdbc:mysql://localhost:3306/loop?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: root  # 여기에 실제 DB 사용자 이름을 입력하세요. (예: root)
-    password: thsutleo12@  # 여기에 실제 DB 비밀번호를 입력하세요.
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
-  # JPA (Java Persistence API) 설정
   jpa:
     hibernate:
-      ddl-auto: update # 애플리케이션 실행 시 Entity 변경 사항을 DB에 자동 반영
+      ddl-auto: update
     properties:
       hibernate:
-      # show_sql: true # 실행되는 SQL 쿼리를 로그로 출력 (디버깅용)
-      # format_sql: true # SQL 쿼리를 보기 좋게 정렬
-    open-in-view: false # 성능을 위해 OSIV(Open Session In View)는 비활성화
+        show_sql: true
+        format_sql: true
+    open-in-view: false
 
-# JWT (JSON Web Token) 설정
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 20MB
+      max-request-size: 100MB
+
+  cloud:
+    aws:
+      region:
+        static: ${AWS_REGION}
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID}
+        secret-key: ${AWS_SECRET_ACCESS_KEY}
+      s3:
+        bucket: ${AWS_S3_BUCKET}
+
 jwt:
-  secret: LoopProjectSecretKeyForAuthenticationAndAuthorizationLoopLoopProject
-  access-token-validity-in-seconds: 3600 # 1시간
-  refresh-token-validity-in-seconds: 604800 # 7일
+  secret: ${JWT_SECRET}
+  access-token-validity-in-seconds: ${JWT_ACCESS_TOKEN_VALIDITY}
+  refresh-token-validity-in-seconds: ${JWT_REFRESH_TOKEN_VALIDITY}
 
 springdoc:
   api-docs:
