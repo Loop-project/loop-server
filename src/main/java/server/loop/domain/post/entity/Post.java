@@ -11,6 +11,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import server.loop.domain.user.entity.User;
+import server.loop.global.common.BaseEntity;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -20,7 +21,7 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Post {
+public class Post extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -53,29 +54,35 @@ public class Post {
     @Column(name = "report_count", nullable = false)
     private int reportCount = 0; // 신고 횟수
 
-    @CreatedDate
-    @Column(name = "created_at")
-    private LocalDateTime createdAt; // 생성 시간
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt; // 수정 시간
-
-    @Column(name = "is_deleted", nullable = false)
-    private boolean isDeleted = false; //삭제
-    public boolean isLikedBy(User user) {
-        if (user == null) {
-            return false;
-        }
-        return likes.stream()
-                .anyMatch(like -> like.getUser().getId().equals(user.getId()));
-    }
     @Builder
     public Post(User author, Category category, String title, String content) {
         this.author = author;
         this.category = category;
         this.title = title;
         this.content = content;
+    }
+
+    // === 연관관계 편의 메서드 ===
+    public void addImage(PostImage image) {
+        images.add(image);
+        image.setPost(this);
+    }
+    public void setAuthor(User author) {
+        this.author = author;
+    }
+    public void addComment(Comment comment) {
+        comments.add(comment);
+        comment.setPost(this);
+    }
+
+    public void addLike(PostLike like) {
+        likes.add(like);
+        like.setPost(this);
+    }
+
+    // === 비즈니스 로직 ===
+    public boolean isLikedBy(User user) {
+        return user != null && likes.stream().anyMatch(like -> like.getUser().getId().equals(user.getId()));
     }
 
     public void update(Category category, String title, String content) {
@@ -86,8 +93,5 @@ public class Post {
 
     public void addReport() {
         this.reportCount++;
-    }
-    public void softDelete() {
-        this.isDeleted = true;
     }
 }

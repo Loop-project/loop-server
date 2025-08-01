@@ -80,13 +80,11 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
 
-        // 작성자 본인인지 확인
         if (!comment.getAuthor().getEmail().equals(email)) {
             throw new AccessDeniedException("댓글을 삭제할 권한이 없습니다.");
         }
 
-        commentRepository.delete(comment);
+        comment.softDelete();
     }
-
 
 }

@@ -9,10 +9,7 @@ import server.loop.domain.user.entity.User;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-// 한 사용자는 한 게시글에 한 번만 좋아요를 누를 수 있도록 복합 유니크 키 설정
-@Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "post_id"})
-})
+@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "post_id"})})
 public class PostLike {
 
     @Id
@@ -27,8 +24,11 @@ public class PostLike {
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;
 
-    public PostLike(User user, Post post) {
+    public PostLike(User user) {
         this.user = user;
+    }
+
+    public void setPost(Post post) {
         this.post = post;
     }
 }

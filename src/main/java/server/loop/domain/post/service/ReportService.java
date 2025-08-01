@@ -26,7 +26,7 @@ public class ReportService {
     public String reportPost(Long postId, String email, String reason) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
-        Post post = postRepository.findActivePostById(postId)
+        Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않거나 삭제된 게시글입니다."));
 
         if (postReportRepository.existsByUserAndPost(user, post)) {
@@ -42,7 +42,6 @@ public class ReportService {
 
         if (updatedPost.getReportCount() >= REPORT_THRESHOLD) {
             updatedPost.softDelete();
-            postRepository.save(updatedPost); // 명시적 저장
             return "신고가 3회 누적되어 게시글이 블라인드 처리되었습니다.";
         }
 

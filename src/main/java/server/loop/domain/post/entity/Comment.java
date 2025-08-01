@@ -5,20 +5,16 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import server.loop.domain.user.entity.User;
+import server.loop.global.common.BaseEntity;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@EntityListeners(AuditingEntityListener.class)
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Comment {
+public class Comment extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,34 +23,20 @@ public class Comment {
     @Column(nullable = false)
     private String content;
 
-    @CreatedDate
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
-
-    // 이 댓글을 쓴 사용자
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User author;
 
-    // 이 댓글이 달린 게시글
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     private Post post;
 
-    // '부모' 댓글 (대댓글의 경우)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Comment parent;
 
-    // '자식' 댓글들 (대댓글 목록)
     @OneToMany(mappedBy = "parent", orphanRemoval = true)
     private List<Comment> children = new ArrayList<>();
-
-    @Column(name = "is_deleted", nullable = false)
-    private boolean isDeleted = false;
 
     @Builder
     public Comment(String content, User author, Post post, Comment parent) {
@@ -64,12 +46,24 @@ public class Comment {
         this.parent = parent;
     }
 
-    // 수정, 삭제 상태 변경을 위한 메소드
-    public void update(String content) {
-        this.content = content;
+    // === 연관관계 편의 메서드 ===
+    public void addChild(Comment child) {
+        children.add(child);
+        child.setParent(this);
+    }
+    public void setAuthor(User author) {
+        this.author = author;
+    }
+    public void setParent(Comment parent) {
+        this.parent = parent;
     }
 
-    public void softDelete() {
-        this.isDeleted = true;
+    public void setPost(Post post) {
+        this.post = post;
+    }
+
+    // === 도메인 로직 ===
+    public void update(String content) {
+        this.content = content;
     }
 }
