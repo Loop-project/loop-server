@@ -24,26 +24,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        // 1. Request Header에서 "Authorization" 값 추출
+        String path = request.getRequestURI();
+        // 회원가입/로그인/토큰 재발급은 필터 스킵
+        if (path.startsWith("/api/users/signup") || path.startsWith("/api/users/login") || path.startsWith("/api/token/reissue")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authorizationHeader = request.getHeader("Authorization");
         String token = null;
-
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             token = authorizationHeader.substring(7);
         }
 
-        // 2. 토큰 유효성 검사
-        if (token != null && jwtTokenProvider.validateToken(token)) {
-            // 토큰이 유효할 경우, 토큰에서 사용자 정보(이메일) 추출
-            String email = jwtTokenProvider.getEmail(token);
-            // UserDetailsService를 통해 사용자 정보 로드
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-
-            // SecurityContext에 인증 정보 저장
-            Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+        // 토큰이 없거나 유효하지 않으면 그냥 통과 (403 방지)
+        if (token == null || !jwtTokenProvider.validateToken(token)) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        filterChain.doFilter(request, response); // 다음 필터로 요청 전달
+        // 토큰 유효 → SecurityContext에 인증 정보 저장
+        String email = jwtTokenProvider.getEmail(token);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        filterChain.doFilter(request, response);
     }
 }
