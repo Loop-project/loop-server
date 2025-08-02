@@ -24,6 +24,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String path = request.getRequestURI();
         // 회원가입/로그인/토큰 재발급은 필터 스킵
         if (path.startsWith("/api/users/signup") || path.startsWith("/api/users/login") || path.startsWith("/api/token/reissue")) {
