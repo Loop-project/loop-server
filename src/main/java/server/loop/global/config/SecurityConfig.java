@@ -33,9 +33,10 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> {}) // CORS 설정 활성화
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ✅ 프리플라이트 요청 허용
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ✅ Preflight 허용
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
@@ -45,17 +46,22 @@ public class SecurityConfig {
                                 "/swagger-resources"
                         ).permitAll()
                         .requestMatchers(
-                                "/api/users/signup", "/api/users/signup/**",
-                                "/api/users/login", "/api/users/login/**",
-                                "/api/token/reissue"
+                                "/api/users/signup", "/api/users/login", "/api/token/reissue"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
+                        .requestMatchers(
+                                "/api/comments/**",
+                                "/api/posts/**",
+                                "/api/posts/*/like",
+                                "/api/posts/*/report",
+                                "/api/mypage/**"
+                        ).authenticated()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService),
-                        UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
 
 }
