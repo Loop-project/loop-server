@@ -34,6 +34,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Preflight (CORS) 요청은 모두 허용
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         // Swagger 문서
                         .requestMatchers(
                                 "/v3/api-docs/**",
@@ -43,14 +46,20 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/swagger-resources"
                         ).permitAll()
+
                         // 회원가입/로그인/토큰 재발급
                         .requestMatchers(
                                 "/api/users/signup", "/api/users/signup/**",
                                 "/api/users/login", "/api/users/login/**",
                                 "/api/token/reissue"
                         ).permitAll()
+
                         // 게시글 목록 조회 & 단건 조회 (비로그인 허용)
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
+
+                        // 마이페이지 API → 로그인 필요
+                        .requestMatchers("/api/mypage/**").authenticated()
+
                         // 나머지 (댓글, 좋아요, 신고, 게시글 생성·수정·삭제 등)는 로그인 필요
                         .requestMatchers(
                                 "/api/comments/**",
@@ -58,10 +67,12 @@ public class SecurityConfig {
                                 "/api/posts/*/like",
                                 "/api/posts/*/report"
                         ).authenticated()
+
                         // 기타 모든 요청도 인증
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService),
+                        UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
