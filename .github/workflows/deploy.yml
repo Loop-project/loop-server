@@ -53,7 +53,7 @@ jobs:
           docker pull ${{ secrets.ECR_REPOSITORY }}:latest
           docker stop loop-server || true
           docker rm loop-server || true
-          docker run -d -p 80:8080 --name loop-server \
+          docker run -d -p 8080:8080 --name loop-server \
             -e DB_URL='${{ secrets.DB_URL }}' \
             -e DB_USERNAME='${{ secrets.DB_USERNAME }}' \
             -e DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
