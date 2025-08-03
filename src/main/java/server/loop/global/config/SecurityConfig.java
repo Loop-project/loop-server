@@ -31,16 +31,11 @@ public class SecurityConfig {
     private final CustomUserDetailsService customUserDetailsService;
 
     @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        // OPTIONS 메서드에 대한 요청은 시큐리티 필터를 완전히 무시하도록 설정합니다.
-        return (web) -> web.ignoring().requestMatchers(HttpMethod.OPTIONS, "/**");
-    }
-
-    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    // ✅ CORS 설정
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -54,27 +49,16 @@ public class SecurityConfig {
         return source;
     }
 
-
-
+    // ✅ SecurityFilterChain
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ CORS를 SecurityFilterChain에서 활성화
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ✅ Preflight 허용
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/webjars/**",
-                                "/swagger-resources/**",
-                                "/swagger-resources"
-                        ).permitAll()
-                        .requestMatchers(
-                                "/api/users/signup", "/api/users/login", "/api/token/reissue"
-                        ).permitAll()
+                        .requestMatchers("/api/users/signup", "/api/users/login", "/api/token/reissue").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
                         .requestMatchers(
                                 "/api/comments/**",
@@ -90,8 +74,4 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-
-
-
 }
