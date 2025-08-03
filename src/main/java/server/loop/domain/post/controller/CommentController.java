@@ -23,13 +23,13 @@ public class CommentController {
 
     private final CommentService commentService;
 
-    // 댓글/대댓글 생성
-    @Operation(summary = "댓글/대댓글 생성", description = "게시글에 새로운 댓글 또는 대댓글을 작성합니다.")
+    @Operation(summary = "댓글/대댓글 생성", description = "작성 후 최신 댓글 리스트를 반환합니다.")
     @PostMapping("/comments")
-    public ResponseEntity<String> createComment(@RequestBody CommentCreateRequestDto requestDto,
-                                                @AuthenticationPrincipal UserDetails userDetails) {
-        Long commentId = commentService.createComment(requestDto, userDetails.getUsername());
-        return ResponseEntity.ok("댓글이 성공적으로 생성되었습니다. ID: " + commentId);
+    public ResponseEntity<List<CommentResponseDto>> createComment(@RequestBody CommentCreateRequestDto requestDto,
+                                                                  @AuthenticationPrincipal UserDetails userDetails) {
+        commentService.createComment(requestDto, userDetails.getUsername());
+        List<CommentResponseDto> updatedComments = commentService.getCommentsByPost(requestDto.getPostId());
+        return ResponseEntity.ok(updatedComments);
     }
 
     // 특정 게시글의 댓글 목록 조회
@@ -40,22 +40,22 @@ public class CommentController {
         return ResponseEntity.ok(comments);
     }
 
-    // 댓글 수정
-    @Operation(summary = "댓글 수정", description = "작성자 본인의 댓글을 수정합니다.")
+    @Operation(summary = "댓글 수정", description = "작성자 본인의 댓글을 수정 후 최신 댓글 리스트를 반환합니다.")
     @PutMapping("/comments/{commentId}")
-    public ResponseEntity<String> updateComment(@PathVariable Long commentId,
-                                                @RequestBody CommentUpdateRequestDto requestDto,
-                                                @AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
-        commentService.updateComment(commentId, requestDto, userDetails.getUsername());
-        return ResponseEntity.ok("댓글이 성공적으로 수정되었습니다.");
+    public ResponseEntity<List<CommentResponseDto>> updateComment(@PathVariable Long commentId,
+                                                                  @RequestBody CommentUpdateRequestDto requestDto,
+                                                                  @AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
+        Long postId = commentService.updateComment(commentId, requestDto, userDetails.getUsername());
+        List<CommentResponseDto> updatedComments = commentService.getCommentsByPost(postId);
+        return ResponseEntity.ok(updatedComments);
     }
 
-    // 댓글 삭제
-    @Operation(summary = "댓글 삭제", description = "작성자 본인의 댓글을 삭제합니다.")
+    @Operation(summary = "댓글 삭제", description = "작성자 본인의 댓글을 삭제 후 최신 댓글 리스트를 반환합니다.")
     @DeleteMapping("/comments/{commentId}")
-    public ResponseEntity<String> deleteComment(@PathVariable Long commentId,
-                                                @AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
-        commentService.deleteComment(commentId, userDetails.getUsername());
-        return ResponseEntity.ok("댓글이 성공적으로 삭제되었습니다.");
+    public ResponseEntity<List<CommentResponseDto>> deleteComment(@PathVariable Long commentId,
+                                                                  @AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
+        Long postId = commentService.deleteComment(commentId, userDetails.getUsername());
+        List<CommentResponseDto> updatedComments = commentService.getCommentsByPost(postId);
+        return ResponseEntity.ok(updatedComments);
     }
 }
