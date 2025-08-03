@@ -63,28 +63,28 @@ public class CommentService {
                 .map(CommentResponseDto::new)
                 .collect(Collectors.toList());
     }
-    public void updateComment(Long commentId, CommentUpdateRequestDto requestDto, String email) throws AccessDeniedException {
+    //댓글 수정
+    public Long updateComment(Long commentId, CommentUpdateRequestDto requestDto, String email) throws AccessDeniedException {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
-
-        // 작성자 본인인지 확인
         if (!comment.getAuthor().getEmail().equals(email)) {
             throw new AccessDeniedException("댓글을 수정할 권한이 없습니다.");
         }
-
         comment.update(requestDto.getContent());
+        return comment.getPost().getId();
     }
 
+
     // 댓글 삭제
-    public void deleteComment(Long commentId, String email) throws AccessDeniedException {
+    public Long deleteComment(Long commentId, String email) throws AccessDeniedException {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
-
         if (!comment.getAuthor().getEmail().equals(email)) {
             throw new AccessDeniedException("댓글을 삭제할 권한이 없습니다.");
         }
-
+        Long postId = comment.getPost().getId();
         comment.softDelete();
+        return postId;
     }
 
 }
