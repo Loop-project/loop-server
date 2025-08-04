@@ -38,6 +38,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        // 💡 실제 배포 환경의 프론트엔드 주소도 추가해주세요. (예: "http://my-frontend.com")
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
@@ -58,6 +59,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // ================= ⬇️ 이 줄을 추가하세요 ⬇️ =================
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // ================= ⬆️ 이 줄을 추가하세요 ⬆️ =================
+
                         .requestMatchers("/api/users/signup", "/api/users/login", "/api/token/reissue").permitAll() // 1. 인증/인가 없이 접근 가능한 경로
 
                         // 💡 수정된 부분: 게시글 관련 규칙을 명확하게 분리
