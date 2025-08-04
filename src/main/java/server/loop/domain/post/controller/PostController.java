@@ -58,13 +58,17 @@ public class PostController {
 
     // 게시글 수정
     @Operation(summary = "게시글 수정", description = "작성자 본인의 게시글을 수정합니다.")
-    @PutMapping("/{postId}")
-    public ResponseEntity<String> updatePost(@PathVariable Long postId,
-                                             @RequestBody PostUpdateRequestDto requestDto,
-                                             @AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
-        postService.updatePost(postId, requestDto, userDetails.getUsername());
-        return ResponseEntity.ok("게시글이 성공적으로 수정되었습니다. ID: "+postId);
+    @PutMapping(value = "/{postId}", consumes = "multipart/form-data")
+    public ResponseEntity<String> updatePost(
+            @PathVariable Long postId,
+            @RequestPart("requestDto") PostUpdateRequestDto requestDto,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) throws AccessDeniedException, IOException {
+        postService.updatePost(postId, requestDto, images, userDetails.getUsername());
+        return ResponseEntity.ok("게시글이 성공적으로 수정되었습니다. ID: " + postId);
     }
+
 
     // 게시글 삭제
     @Operation(summary = "게시글 삭제", description = "작성자 본인의 게시글을 삭제합니다.")
