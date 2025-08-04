@@ -6,14 +6,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import server.loop.domain.post.dto.post.res.PostLikeResponseDto;
+import server.loop.domain.post.dto.post.res.PostResponseDto;
+import server.loop.domain.post.dto.post.res.TopLikedPostResponseDto;
 import server.loop.domain.post.entity.Post;
 import server.loop.domain.post.entity.repository.PostRepository;
 import server.loop.domain.post.service.LikeService;
+
+import java.util.List;
 
 @Tag(name = "Like", description = "좋아요 관리 API")
 @RestController
@@ -36,4 +37,11 @@ public class LikeController {
 
         return ResponseEntity.ok(new PostLikeResponseDto(likedByUser, post.getLikes().size()));
     }
+
+    @Operation(summary = "전날 작성된 글 중 좋아요 Top 5", description = "전날 작성된 게시글 중 좋아요가 가장 많은 게시글 5개를 반환합니다.")
+    @GetMapping("/posts/top-liked")
+    public ResponseEntity<List<TopLikedPostResponseDto>> getYesterdayTopLikedPosts() {
+        return ResponseEntity.ok(likeService.getYesterdayTop5LikedPosts());
+    }
+
 }

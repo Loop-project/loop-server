@@ -1,14 +1,23 @@
 package server.loop.domain.post.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import server.loop.domain.post.dto.post.res.PostResponseDto;
+import server.loop.domain.post.dto.post.res.TopLikedPostResponseDto;
 import server.loop.domain.post.entity.Post;
 import server.loop.domain.post.entity.PostLike;
 import server.loop.domain.post.entity.repository.PostLikeRepository;
 import server.loop.domain.post.entity.repository.PostRepository;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -40,4 +49,18 @@ public class LikeService {
                     return "좋아요를 눌렀습니다.";
                 });
     }
+    public List<TopLikedPostResponseDto> getYesterdayTop5LikedPosts() {
+        LocalDate yesterday = LocalDate.now().minusDays(1);
+        LocalDateTime start = yesterday.atStartOfDay();
+        LocalDateTime end = yesterday.atTime(LocalTime.MAX);
+
+        System.out.println("쿼리 범위: " + start + " ~ " + end);
+
+        List<Post> posts = postLikeRepository.findTopPostsCreatedInPeriodOrderByLikesNative(start, end);
+
+        return posts.stream()
+                .map(TopLikedPostResponseDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
 }
