@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -25,6 +24,15 @@ jobs:
     - name: Build JAR
       run: ./gradlew clean bootJar
 
+    # --- ⬇️ 수정된 부분 시작 ⬇️ ---
+
+    - name: Get current time
+      uses: 1466587594/get-current-time@v2
+      id: current-time
+      with:
+        format: YYYYMMDD-HHmmss
+        utcOffset: "+09:00"
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
@@ -33,15 +41,18 @@ jobs:
         aws-region: ${{ secrets.AWS_REGION }}
 
     - name: Log in to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        IMAGE_TAG: ${{ steps.current-time.outputs.formattedTime }}
       run: |
-        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
-        | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY }}
-
-    - name: Build Docker image
-      run: docker build -t ${{ secrets.ECR_REPOSITORY }}:latest .
-
-    - name: Push Docker image
-      run: docker push ${{ secrets.ECR_REPOSITORY }}:latest
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
     - name: Deploy to EC2
       uses: appleboy/ssh-action@v1.0.3
@@ -50,7 +61,7 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          docker pull ${{ secrets.ECR_REPOSITORY }}:latest
+          docker pull ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ steps.current-time.outputs.formattedTime }}
           docker stop loop-server || true
           docker rm loop-server || true
           docker run -d -p 8080:8080 --name loop-server \
@@ -64,4 +75,6 @@ jobs:
             -e JWT_SECRET='${{ secrets.JWT_SECRET }}' \
             -e JWT_ACCESS_TOKEN_VALIDITY='${{ secrets.JWT_ACCESS_TOKEN_VALIDITY }}' \
             -e JWT_REFRESH_TOKEN_VALIDITY='${{ secrets.JWT_REFRESH_TOKEN_VALIDITY }}' \
-            ${{ secrets.ECR_REPOSITORY }}:latest
+            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ steps.current-time.outputs.formattedTime }}
+            
+    # --- ⬆️ 수정된 부분 끝 ⬆️ ---
