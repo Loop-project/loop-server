@@ -58,5 +58,4 @@ public class CommentController {
         List<CommentResponseDto> updatedComments = commentService.getCommentsByPost(postId);
         return ResponseEntity.ok(updatedComments);
     }
-
 }
