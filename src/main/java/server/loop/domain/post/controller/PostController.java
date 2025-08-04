@@ -49,7 +49,8 @@ public class PostController {
     @GetMapping("/{postId}")
     public ResponseEntity<PostDetailResponseDto> getPost(
             @PathVariable Long postId,
-            @AuthenticationPrincipal @Nullable User currentUser) {
+            @AuthenticationPrincipal @Nullable User currentUser // 로그인 안 해도 null
+    ) {
         PostDetailResponseDto response = postService.getPost(postId, currentUser);
         return ResponseEntity.ok(response);
     }
