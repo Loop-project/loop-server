@@ -28,6 +28,9 @@ public class PostDetailResponseDto {
     @Schema(description = "작성자 닉네임", example = "루프유저")
     private final String authorNickname;
 
+    @Schema(description = "작성자 ID", example = "루프유저")
+    private Long authorId;
+
     @Schema(description = "카테고리", example = "FREE")
     private final Category category;
 
@@ -62,9 +65,13 @@ public class PostDetailResponseDto {
         this.content = post.getContent();
 
         User author = post.getAuthor();
-        this.authorNickname = (author == null || author.getDeletedAt() != null)
-                ? "탈퇴한 사용자"
-                : author.getNickname();
+        if (author == null || author.getDeletedAt() != null) {
+            this.authorNickname = "탈퇴한 사용자";
+            this.authorId = null;  // 작성자 없는 경우 null
+        } else {
+            this.authorNickname = author.getNickname();
+            this.authorId = author.getId();  // 작성자 ID 세팅
+        }
 
         this.category = post.getCategory();
         this.createdAt = post.getCreatedAt();
@@ -73,7 +80,7 @@ public class PostDetailResponseDto {
         this.commentCount = post.getComments().size();
         this.likedByUser = likedByUser;
         this.comments = post.getComments().stream()
-                .filter(comment -> comment.getParent() == null) // 최상위 댓글만 필터링
+                .filter(comment -> comment.getParent() == null)
                 .map(CommentResponseDto::new)
                 .collect(Collectors.toList());
     }

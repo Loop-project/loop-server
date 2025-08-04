@@ -78,7 +78,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/mypage/**").authenticated()                          // 마이페이지는 인증된 사용자만
 
                         // 4.  광고 (누구나 접근 가능)
-                        .requestMatchers(HttpMethod.GET, "/api/ads", "/api/ads/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/ads/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/ads").permitAll()
+
 
                         .anyRequest().authenticated()
                 )

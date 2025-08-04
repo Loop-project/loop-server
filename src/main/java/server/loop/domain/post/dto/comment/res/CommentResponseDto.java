@@ -22,6 +22,9 @@ public class CommentResponseDto {
     @Schema(description = "작성자 닉네임 (탈퇴 시 '탈퇴한 사용자' 표시)", example = "루프유저")
     private final String authorNickname;
 
+    @Schema(description = "작성자 ID", example = "1")
+    private final Long authorId;
+
     @Schema(description = "생성 시간", example = "2025-07-28T18:00:55.753302")
     private final LocalDateTime createdAt;
 
@@ -32,19 +35,20 @@ public class CommentResponseDto {
         this.commentId = comment.getId();
         this.createdAt = comment.getCreatedAt();
 
-        // 작성자가 null이거나 탈퇴한 경우 처리
         User author = comment.getAuthor();
-        this.authorNickname = (author == null || author.getDeletedAt() != null)
-                ? "탈퇴한 사용자"
-                : author.getNickname();
+        if (author == null || author.getDeletedAt() != null) {
+            this.authorNickname = "탈퇴한 사용자";
+            this.authorId = null;
+        } else {
+            this.authorNickname = author.getNickname();
+            this.authorId = author.getId();   // 작성자 ID 세팅
+        }
 
-        // 댓글이 삭제된 경우 처리
         if (comment.isDeleted()) {
             this.content = "삭제된 댓글입니다.";
-            this.replies = List.of(); // 빈 리스트
+            this.replies = List.of();
         } else {
             this.content = comment.getContent();
-            // 자식 댓글들(대댓글)도 DTO로 변환
             this.replies = comment.getChildren().stream()
                     .map(CommentResponseDto::new)
                     .collect(Collectors.toList());
