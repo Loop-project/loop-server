@@ -61,7 +61,6 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/users/signup", "/api/users/login", "/api/token/reissue").permitAll()
 
-                        // --- ⬇️ 이 부분이 핵심 수정 사항입니다 ⬇️ ---
                         // 1. 게시글 관련 규칙
                         .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/**").permitAll() // 게시글 조회는 누구나
                         .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()            // 게시글 작성은 인증된 사용자만
@@ -77,7 +76,9 @@ public class SecurityConfig {
                         // 3. 좋아요, 마이페이지 등 기타 규칙
                         .requestMatchers(HttpMethod.POST, "/api/posts/*/like").authenticated()      // 좋아요는 인증된 사용자만
                         .requestMatchers("/api/mypage/**").authenticated()                          // 마이페이지는 인증된 사용자만
-                        // --- ⬆️ 이 부분이 핵심 수정 사항입니다 ⬆️ ---
+
+                        // 4.  광고 (누구나 접근 가능)
+                        .requestMatchers(HttpMethod.GET, "/api/ads", "/api/ads/**").permitAll()
 
                         .anyRequest().authenticated()
                 )
