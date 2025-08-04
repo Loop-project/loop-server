@@ -70,7 +70,7 @@ public class PostService {
     public PostDetailResponseDto getPost(Long postId, User currentUser) {
         Post post = postRepository.findActivePostWithCommentsById(postId)
                 .orElseThrow(() -> new NoSuchElementException("게시글을 찾을 수 없습니다."));
-        boolean likedByUser = post.isLikedBy(currentUser);
+        boolean likedByUser = currentUser != null && post.isLikedBy(currentUser);
         return new PostDetailResponseDto(post, likedByUser);
     }
 

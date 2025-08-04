@@ -1,5 +1,6 @@
 package server.loop.domain.post.controller;
 
+import io.micrometer.common.lang.Nullable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +49,7 @@ public class PostController {
     @GetMapping("/{postId}")
     public ResponseEntity<PostDetailResponseDto> getPost(
             @PathVariable Long postId,
-            @AuthenticationPrincipal User currentUser) {
+            @AuthenticationPrincipal @Nullable User currentUser) {
         PostDetailResponseDto response = postService.getPost(postId, currentUser);
         return ResponseEntity.ok(response);
     }
