@@ -27,10 +27,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("SELECT p FROM Post p WHERE p.category = :category ORDER BY p.createdAt DESC")
     Slice<Post> findAllActivePostsByCategory(@Param("category") Category category, Pageable pageable);
 
-    @Query("SELECT p FROM Post p " +
+    @Query("SELECT DISTINCT p FROM Post p " +
+            "LEFT JOIN FETCH p.author " +
             "LEFT JOIN FETCH p.comments c " +
             "LEFT JOIN FETCH c.author " +
-            "WHERE p.id = :id")
+            "LEFT JOIN FETCH c.children cc " +
+            "LEFT JOIN FETCH cc.author " +
+            "WHERE p.id = :id AND p.isDeleted = false")
     Optional<Post> findActivePostWithCommentsById(@Param("id") Long id);
 
     @Query("SELECT p FROM Post p WHERE p.author = :author ORDER BY p.createdAt DESC")

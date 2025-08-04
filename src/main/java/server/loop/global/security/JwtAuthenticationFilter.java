@@ -24,6 +24,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        String path = request.getRequestURI();
+
+        // === 1. 광고 업로드/조회 API는 인증 없이 통과 ===
+        if (path.startsWith("/api/ads")) {  // /api/ads 또는 /api/ads/… 전부 허용
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         // 1. 요청 헤더에서 토큰 추출
         String token = resolveToken(request);
 

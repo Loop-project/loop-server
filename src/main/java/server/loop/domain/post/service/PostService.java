@@ -68,9 +68,8 @@ public class PostService {
     // 상세 조회
     @Transactional(readOnly = true)
     public PostDetailResponseDto getPost(Long postId, User currentUser) {
-        Post post = postRepository.findById(postId)
+        Post post = postRepository.findActivePostWithCommentsById(postId)
                 .orElseThrow(() -> new NoSuchElementException("게시글을 찾을 수 없습니다."));
-
         boolean likedByUser = post.isLikedBy(currentUser);
         return new PostDetailResponseDto(post, likedByUser);
     }
