@@ -25,7 +25,7 @@ public class LikeController {
     private final PostRepository postRepository;
 
     @Operation(summary = "게시글 좋아요 토글", description = "좋아요 토글 후 최신 상태를 반환합니다.")
-    @PostMapping("/posts/{postId}/like")
+    @PostMapping(value = "/posts/{postId}/like", produces = "application/json")
     public ResponseEntity<PostLikeResponseDto> toggleLike(@PathVariable Long postId,
                                                           @AuthenticationPrincipal UserDetails userDetails) {
         likeService.toggleLike(postId, userDetails.getUsername());
