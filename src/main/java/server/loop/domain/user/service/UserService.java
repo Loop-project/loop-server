@@ -10,6 +10,7 @@ import server.loop.domain.auth.entity.repo.RefreshTokenRepository;
 import server.loop.domain.user.dto.req.UserLoginDto;
 import server.loop.domain.user.dto.req.UserSignUpDto;
 import server.loop.domain.user.dto.req.UserUpdateRequestDto;
+import server.loop.domain.user.dto.res.UserResponseDto;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
 import server.loop.global.security.JwtTokenProvider;
@@ -55,6 +56,7 @@ public class UserService {
         return user.getId();
     }
 
+    //로그인
     public TokenDto login(UserLoginDto loginDto) {
         User user = userRepository.findByEmail(loginDto.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
@@ -77,6 +79,21 @@ public class UserService {
         // 3. 두 토큰을 DTO에 담아 반환
         return new TokenDto(accessToken, refreshToken);
     }
+
+    //회원 조회
+    @Transactional(readOnly = true) // 조회만 하므로 readOnly = true 추가
+    public UserResponseDto getUserInfoByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다.: " + email));
+
+        // User 엔티티를 UserResponseDto로 변환하여 반환
+        return new UserResponseDto(
+                user.getId(),
+                user.getEmail(),
+                user.getNickname()
+        );
+    }
+
     //회원 정보 수정
     public void updateUser(UserUpdateRequestDto requestDto, String email) throws Exception {
         User user = userRepository.findByEmail(email)
