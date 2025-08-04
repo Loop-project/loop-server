@@ -22,11 +22,10 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     private UserDetails createUserDetails(User user) {
-
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
                 .password(user.getPassword())
-                .authorities("USER")
+                .roles("USER")
                 .build();
     }
 }

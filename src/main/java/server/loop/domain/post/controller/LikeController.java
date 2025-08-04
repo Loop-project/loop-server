@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import server.loop.domain.post.dto.post.res.PostLikeResponseDto;
+import server.loop.domain.post.entity.Post;
+import server.loop.domain.post.entity.repository.PostRepository;
 import server.loop.domain.post.service.LikeService;
 
 @Tag(name = "Like", description = "좋아요 관리 API")
@@ -19,12 +22,18 @@ import server.loop.domain.post.service.LikeService;
 public class LikeController {
 
     private final LikeService likeService;
+    private final PostRepository postRepository;
 
-    @Operation(summary = "게시글 좋아요 토글", description = "게시글에 좋아요를 누르거나 취소합니다.")
-    @PostMapping("/posts/{postId}/like")
-    public ResponseEntity<String> toggleLike(@PathVariable Long postId,
-                                             @AuthenticationPrincipal UserDetails userDetails) {
-        String message = likeService.toggleLike(postId, userDetails.getUsername());
-        return ResponseEntity.ok(message);
+    @Operation(summary = "게시글 좋아요 토글", description = "좋아요 토글 후 최신 상태를 반환합니다.")
+    @PostMapping(value = "/posts/{postId}/like", produces = "application/json")
+    public ResponseEntity<PostLikeResponseDto> toggleLike(@PathVariable Long postId,
+                                                          @AuthenticationPrincipal UserDetails userDetails) {
+        likeService.toggleLike(postId, userDetails.getUsername());
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+        boolean likedByUser = post.getLikes().stream()
+                .anyMatch(like -> like.getUser().getEmail().equals(userDetails.getUsername()));
+
+        return ResponseEntity.ok(new PostLikeResponseDto(likedByUser, post.getLikes().size()));
     }
 }

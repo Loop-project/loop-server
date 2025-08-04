@@ -3,6 +3,7 @@ package server.loop.domain.user.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,6 +12,7 @@ import server.loop.domain.auth.dto.TokenDto;
 import server.loop.domain.user.dto.req.UserLoginDto;
 import server.loop.domain.user.dto.req.UserSignUpDto;
 import server.loop.domain.user.dto.req.UserUpdateRequestDto;
+import server.loop.domain.user.dto.res.UserResponseDto;
 import server.loop.domain.user.service.UserService;
 
 @Tag(name = "User", description = "사용자 인증 및 관리 API")
@@ -35,6 +37,15 @@ public class UserController {
         return ResponseEntity.ok(tokenDto);
     }
 
+    @Operation(summary = "내 정보 조회", description = "현재 로그인된 사용자의 정보를 조회합니다.")
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDto> getMyInfo(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        UserResponseDto userInfo = userService.getUserInfoByEmail(userDetails.getUsername());
+        return ResponseEntity.ok(userInfo);
+    }
     //정보 수정
     @Operation(summary = "회원 정보 수정", description = "로그인한 사용자의 닉네임 또는 비밀번호를 수정합니다.")
     @PatchMapping("/me")
