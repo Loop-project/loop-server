@@ -24,7 +24,7 @@ public class CommentController {
     private final CommentService commentService;
 
     @Operation(summary = "댓글/대댓글 생성", description = "작성 후 최신 댓글 리스트를 반환합니다.")
-    @PostMapping("/comments")
+    @PostMapping(value = "/comments", produces = "application/json") // 수정
     public ResponseEntity<List<CommentResponseDto>> createComment(@RequestBody CommentCreateRequestDto requestDto,
                                                                   @AuthenticationPrincipal UserDetails userDetails) {
         commentService.createComment(requestDto, userDetails.getUsername());
@@ -34,14 +34,14 @@ public class CommentController {
 
     // 특정 게시글의 댓글 목록 조회
     @Operation(summary = "게시글의 댓글 목록 조회", description = "계층 구조로 된 댓글과 대댓글 목록을 조회합니다.")
-    @GetMapping("/posts/{postId}/comments")
+    @GetMapping(value = "/posts/{postId}/comments", produces = "application/json") // 수정
     public ResponseEntity<List<CommentResponseDto>> getCommentsByPost(@PathVariable Long postId) {
         List<CommentResponseDto> comments = commentService.getCommentsByPost(postId);
         return ResponseEntity.ok(comments);
     }
 
     @Operation(summary = "댓글 수정", description = "작성자 본인의 댓글을 수정 후 최신 댓글 리스트를 반환합니다.")
-    @PutMapping("/comments/{commentId}")
+    @PutMapping(value = "/comments/{commentId}", produces = "application/json") // 수정
     public ResponseEntity<List<CommentResponseDto>> updateComment(@PathVariable Long commentId,
                                                                   @RequestBody CommentUpdateRequestDto requestDto,
                                                                   @AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
@@ -51,7 +51,7 @@ public class CommentController {
     }
 
     @Operation(summary = "댓글 삭제", description = "작성자 본인의 댓글을 삭제 후 최신 댓글 리스트를 반환합니다.")
-    @DeleteMapping("/comments/{commentId}")
+    @DeleteMapping(value = "/comments/{commentId}", produces = "application/json") // 수정
     public ResponseEntity<List<CommentResponseDto>> deleteComment(@PathVariable Long commentId,
                                                                   @AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
         Long postId = commentService.deleteComment(commentId, userDetails.getUsername());
