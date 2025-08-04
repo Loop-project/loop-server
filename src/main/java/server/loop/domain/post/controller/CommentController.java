@@ -31,6 +31,7 @@ public class CommentController {
         List<CommentResponseDto> updatedComments = commentService.getCommentsByPost(requestDto.getPostId());
         return ResponseEntity.ok(updatedComments);
     }
+
     // 특정 게시글의 댓글 목록 조회
     @Operation(summary = "게시글의 댓글 목록 조회", description = "계층 구조로 된 댓글과 대댓글 목록을 조회합니다.")
     @GetMapping(value = "/posts/{postId}/comments", produces = "application/json") // 수정
