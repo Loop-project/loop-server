@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -24,6 +23,8 @@ jobs:
 
     - name: Build JAR
       run: ./gradlew clean bootJar
+
+    # --- ⬇️ 수정된 부분 시작 ⬇️ ---
 
     - name: Get current time
       uses: 1466587594/get-current-time@v2
@@ -60,17 +61,10 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # EC2 인스턴스에서 ECR에 로그인하여 인증 토큰을 갱신합니다.
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
-          
-          # 새로운 태그로 이미지를 pull 합니다.
           docker pull ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ steps.current-time.outputs.formattedTime }}
-          
-          # 기존 컨테이너를 중지하고 삭제합니다.
           docker stop loop-server || true
           docker rm loop-server || true
-          
-          # 새로운 이미지로 컨테이너를 실행합니다.
           docker run -d -p 8080:8080 --name loop-server \
             -e DB_URL='${{ secrets.DB_URL }}' \
             -e DB_USERNAME='${{ secrets.DB_USERNAME }}' \
@@ -83,3 +77,5 @@ jobs:
             -e JWT_ACCESS_TOKEN_VALIDITY='${{ secrets.JWT_ACCESS_TOKEN_VALIDITY }}' \
             -e JWT_REFRESH_TOKEN_VALIDITY='${{ secrets.JWT_REFRESH_TOKEN_VALIDITY }}' \
             ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ steps.current-time.outputs.formattedTime }}
+            
+    # --- ⬆️ 수정된 부분 끝 ⬆️ ---
