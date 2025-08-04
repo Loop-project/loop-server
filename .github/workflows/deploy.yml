@@ -85,4 +85,8 @@ jobs:
               -e JWT_REFRESH_TOKEN_VALIDITY=${{ secrets.JWT_REFRESH_TOKEN_VALIDITY }} \
               ${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
 
-    
+      # 11. 헬스체크 (Swagger API 확인)
+      - name: Health check
+        run: |
+          sleep 10
+          curl -f http://${{ secrets.EC2_HOST }}:80/v3/api-docs || exit 1
