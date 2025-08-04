@@ -23,15 +23,21 @@ public class CommentController {
 
     private final CommentService commentService;
 
-    @Operation(summary = "댓글/대댓글 생성", description = "작성 후 최신 댓글 리스트를 반환합니다.")
-    @PostMapping(value = "/comments", produces = "application/json") // 수정
-    public ResponseEntity<List<CommentResponseDto>> createComment(@RequestBody CommentCreateRequestDto requestDto,
-                                                                  @AuthenticationPrincipal UserDetails userDetails) {
-        commentService.createComment(requestDto, userDetails.getUsername());
-        List<CommentResponseDto> updatedComments = commentService.getCommentsByPost(requestDto.getPostId());
-        return ResponseEntity.ok(updatedComments);
-    }
+//    @Operation(summary = "댓글/대댓글 생성", description = "작성 후 최신 댓글 리스트를 반환합니다.")
+//    @PostMapping(value = "/comments", produces = "application/json") // 수정
+//    public ResponseEntity<List<CommentResponseDto>> createComment(@RequestBody CommentCreateRequestDto requestDto,
+//                                                                  @AuthenticationPrincipal UserDetails userDetails) {
+//        commentService.createComment(requestDto, userDetails.getUsername());
+//        List<CommentResponseDto> updatedComments = commentService.getCommentsByPost(requestDto.getPostId());
+//        return ResponseEntity.ok(updatedComments);
+//    }
+@PostMapping(value = "/comments", produces = "application/json")
+public ResponseEntity<List<CommentResponseDto>> createComment(@RequestBody CommentCreateRequestDto requestDto,
+                                                              @AuthenticationPrincipal UserDetails userDetails) {
 
+    // 이 코드가 실행되는지 확인하기 위해 의도적으로 오류를 발생시킵니다.
+    throw new RuntimeException("!!! 최종 배포 확인용 테스트 V5 !!!");
+}
     // 특정 게시글의 댓글 목록 조회
     @Operation(summary = "게시글의 댓글 목록 조회", description = "계층 구조로 된 댓글과 대댓글 목록을 조회합니다.")
     @GetMapping(value = "/posts/{postId}/comments", produces = "application/json") // 수정
@@ -58,4 +64,5 @@ public class CommentController {
         List<CommentResponseDto> updatedComments = commentService.getCommentsByPost(postId);
         return ResponseEntity.ok(updatedComments);
     }
+
 }
