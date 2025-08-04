@@ -38,8 +38,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // 💡 실제 배포 환경의 프론트엔드 주소도 추가해주세요. (예: "http://my-frontend.com")
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://3.35.135.211")); // 실제 프론트 주소 추가
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
@@ -59,25 +58,27 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // ================= ⬇️ 이 줄을 추가하세요 ⬇️ =================
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        // ================= ⬆️ 이 줄을 추가하세요 ⬆️ =================
+                        .requestMatchers("/api/users/signup", "/api/users/login", "/api/token/reissue").permitAll()
 
-                        .requestMatchers("/api/users/signup", "/api/users/login", "/api/token/reissue").permitAll() // 1. 인증/인가 없이 접근 가능한 경로
+                        // --- ⬇️ 이 부분이 핵심 수정 사항입니다 ⬇️ ---
+                        // 1. 게시글 관련 규칙
+                        .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/**").permitAll() // 게시글 조회는 누구나
+                        .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()            // 게시글 작성은 인증된 사용자만
+                        .requestMatchers(HttpMethod.PUT, "/api/posts/**").authenticated()           // 게시글 수정은 인증된 사용자만
+                        .requestMatchers(HttpMethod.DELETE, "/api/posts/**").authenticated()        // 게시글 삭제는 인증된 사용자만
 
-                        // 💡 수정된 부분: 게시글 관련 규칙을 명확하게 분리
-                        .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/**").permitAll() // 2. 게시글 '조회'는 누구나 가능
-                        .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()             // 3. 게시글 '작성'은 인증된 사용자만 가능
+                        // 2. 댓글 관련 규칙
+                        .requestMatchers(HttpMethod.GET, "/api/posts/*/comments").permitAll()     // 댓글 조회는 누구나
+                        .requestMatchers(HttpMethod.POST, "/api/comments").authenticated()          // 댓글 작성은 인증된 사용자만
+                        .requestMatchers(HttpMethod.PUT, "/api/comments/**").authenticated()        // 댓글 수정은 인증된 사용자만
+                        .requestMatchers(HttpMethod.DELETE, "/api/comments/**").authenticated()     // 댓글 삭제는 인증된 사용자만
 
-                        .requestMatchers( // 4. 그 외 인증이 필요한 경로들
-                                "/api/comments/**",
-                                "/api/posts/*/like",
-                                "/api/posts/*/report",
-                                "/api/mypage/**"
-                                // 참고: 게시글 수정(PUT), 삭제(DELETE) 규칙도 필요하다면 여기에 추가해야 합니다.
-                                // 예: .requestMatchers(HttpMethod.PUT, "/api/posts/*").authenticated()
-                        ).authenticated()
+                        // 3. 좋아요, 마이페이지 등 기타 규칙
+                        .requestMatchers(HttpMethod.POST, "/api/posts/*/like").authenticated()      // 좋아요는 인증된 사용자만
+                        .requestMatchers("/api/mypage/**").authenticated()                          // 마이페이지는 인증된 사용자만
+                        // --- ⬆️ 이 부분이 핵심 수정 사항입니다 ⬆️ ---
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService),
