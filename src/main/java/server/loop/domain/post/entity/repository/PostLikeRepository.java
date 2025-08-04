@@ -9,6 +9,8 @@ import server.loop.domain.post.entity.Post;
 import server.loop.domain.post.entity.PostLike;
 import server.loop.domain.user.entity.User;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
@@ -21,4 +23,21 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
             "WHERE pl.user = :user AND pl.post.isDeleted = false " +
             "ORDER BY pl.post.createdAt DESC")
     Slice<Post> findActivePostsLikedByUser(@Param("user") User user, Pageable pageable);
+
+    //좋아요 top 5
+    @Query(value = """
+    SELECT p.* 
+    FROM post p
+    LEFT JOIN post_like l ON p.id = l.post_id
+    WHERE p.created_at BETWEEN :start AND :end
+    GROUP BY p.id
+    ORDER BY COUNT(l.id) DESC, p.created_at DESC
+    LIMIT 5
+""", nativeQuery = true)
+    List<Post> findTopPostsCreatedInPeriodOrderByLikesNative(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
+
 }
