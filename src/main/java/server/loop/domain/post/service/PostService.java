@@ -91,19 +91,40 @@ public class PostService {
     }
 
     // 게시글 수정
-    public Long updatePost(Long postId, PostUpdateRequestDto requestDto, String email) throws AccessDeniedException {
+    public Long updatePost(Long postId, PostUpdateRequestDto requestDto, List<MultipartFile> images, String email)
+            throws AccessDeniedException, IOException {
+
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
 
-        // 작성자 본인인지 확인
+        // 작성자 본인 확인
         if (!post.getAuthor().getEmail().equals(email)) {
             throw new AccessDeniedException("게시글을 수정할 권한이 없습니다.");
         }
 
-        // Post Entity에 만들어 둔 update 메소드 사용
+        // 게시글 내용 수정
         post.update(requestDto.getCategory(), requestDto.getTitle(), requestDto.getContent());
+
+        // === 이미지 처리 ===
+        if (images != null && !images.isEmpty()) {
+            // 1) 기존 이미지 S3에서 삭제
+            post.getImages().forEach(img -> s3UploadService.deleteImageFromS3(img.getImageUrl()));
+            // 2) DB에서 기존 이미지 레코드 제거
+            post.getImages().clear();
+
+            // 3) 새 이미지 업로드
+            for (MultipartFile image : images) {
+                String imageUrl = s3UploadService.uploadFile(image, "post-images");
+                PostImage postImage = new PostImage(imageUrl);
+                post.addImage(postImage);
+            }
+        }
+        // images가 null 또는 비어있으면 → 기존 이미지 유지
+
         return postId;
     }
+
+
 
     // 게시글 삭제
     public void deletePost(Long postId, String email) throws AccessDeniedException {
