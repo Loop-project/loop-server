@@ -25,15 +25,27 @@ public class LikeController {
     private final PostRepository postRepository;
 
     @Operation(summary = "게시글 좋아요 토글", description = "좋아요 토글 후 최신 상태를 반환합니다.")
+    // LikeController.java
+
     @PostMapping(value = "/posts/{postId}/like", produces = "application/json")
     public ResponseEntity<PostLikeResponseDto> toggleLike(@PathVariable Long postId,
                                                           @AuthenticationPrincipal UserDetails userDetails) {
-        likeService.toggleLike(postId, userDetails.getUsername());
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
-        boolean likedByUser = post.getLikes().stream()
-                .anyMatch(like -> like.getUser().getEmail().equals(userDetails.getUsername()));
 
-        return ResponseEntity.ok(new PostLikeResponseDto(likedByUser, post.getLikes().size()));
+        // ======================= 테스트용 코드 =======================
+        // 실제 로직을 무시하고, 무조건 좋아요 개수를 999로 반환합니다.
+        // 서버 로그에도 메시지를 출력합니다.
+        System.out.println("!!!!!!!!!! 좋아요 API 최종 테스트 코드 실행됨 !!!!!!!!!!");
+        return ResponseEntity.ok(new PostLikeResponseDto(true, 999));
+        // ===========================================================
+
+    /* // 기존 코드는 잠시 주석 처리
+    likeService.toggleLike(postId, userDetails.getUsername());
+    Post post = postRepository.findById(postId)
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+    boolean likedByUser = post.getLikes().stream()
+            .anyMatch(like -> like.getUser().getEmail().equals(userDetails.getUsername()));
+
+    return ResponseEntity.ok(new PostLikeResponseDto(likedByUser, post.getLikes().size()));
+    */
     }
 }
