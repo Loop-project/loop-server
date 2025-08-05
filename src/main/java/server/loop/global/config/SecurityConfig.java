@@ -40,7 +40,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
                 "https://loop.o-r.kr",         // 프론트
-                "https://www.loop.o-r.kr"      // www 서브도메인
+                "https://www.loop.o-r.kr",      // www 서브도메인
+                "https://loop-front-eta.vercel.app"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
