@@ -39,11 +39,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://3.35.135.211",
-                "https://loop.o-r.kr",
-                "https://www.loop.o-r.kr",
-                "http://52.78.82.75"
+                "https://loop.o-r.kr",         // 프론트
+                "https://www.loop.o-r.kr"      // www 서브도메인
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
@@ -53,6 +50,7 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 
 
 
