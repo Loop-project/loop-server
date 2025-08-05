@@ -38,11 +38,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // 로컬 환경과 배포 환경 모두 명시
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:5173",       // 로컬 프론트엔드 개발 환경
-                "http://localhost:8080",       // 로컬 백엔드 서버(테스트용)
-                "https://*.vercel.app",        // Vercel 배포 환경
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:5173",       // 로컬 개발 환경
+                "https://*.vercel.app",        // Vercel 모든 배포 환경
                 "https://loop.o-r.kr",         // 커스텀 도메인
                 "https://www.loop.o-r.kr"      // www 서브도메인
         ));
@@ -55,7 +53,7 @@ public class SecurityConfig {
         return source;
     }
 
-    // OPTIONS 요청 전역 허용은 이미 잘 설정되어 있으므로 유지하면 됩니다.
+    // OPTIONS 요청 전역 허용
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring().requestMatchers(HttpMethod.OPTIONS, "/**");
