@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,13 +36,15 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+    // CORS
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-                "https://loop.o-r.kr",         // 프론트
-                "https://www.loop.o-r.kr",      // www 서브도메인
-                "https://loop-front-eta.vercel.app"
+        configuration.setAllowedOriginPatterns(List.of(
+                "https://*.vercel.app",       // Vercel 프리뷰/프로덕션 전체 허용
+                "https://loop.o-r.kr",
+                "https://www.loop.o-r.kr"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
@@ -52,10 +55,12 @@ public class SecurityConfig {
         return source;
     }
 
+    // OPTIONS 전역 허용
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring().requestMatchers(HttpMethod.OPTIONS, "/**");
+    }
 
-
-
-    // ✅ SecurityFilterChain
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -63,31 +68,20 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/users/signup", "/api/users/login", "/api/token/reissue").permitAll()
-
-                        // 1. 게시글 관련 규칙
-                        .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/**").permitAll() // 게시글 조회는 누구나
-                        .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()            // 게시글 작성은 인증된 사용자만
-                        .requestMatchers(HttpMethod.PUT, "/api/posts/**").authenticated()           // 게시글 수정은 인증된 사용자만
-                        .requestMatchers(HttpMethod.DELETE, "/api/posts/**").authenticated()        // 게시글 삭제는 인증된 사용자만
-
-                        // 2. 댓글 관련 규칙
-                        .requestMatchers(HttpMethod.GET, "/api/posts/*/comments").permitAll()     // 댓글 조회는 누구나
-                        .requestMatchers(HttpMethod.POST, "/api/comments").authenticated()          // 댓글 작성은 인증된 사용자만
-                        .requestMatchers(HttpMethod.PUT, "/api/comments/**").authenticated()        // 댓글 수정은 인증된 사용자만
-                        .requestMatchers(HttpMethod.DELETE, "/api/comments/**").authenticated()     // 댓글 삭제는 인증된 사용자만
-
-                        // 3. 좋아요, 마이페이지 등 기타 규칙
-                        .requestMatchers(HttpMethod.POST, "/api/posts/*/like").authenticated()      // 좋아요는 인증된 사용자만
-                        .requestMatchers("/api/mypage/**").authenticated()                          // 마이페이지는 인증된 사용자만
-
-                        // 4.  광고 (누구나 접근 가능)
+                        .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/posts/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/posts/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/posts/*/comments").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/comments").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/comments/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/comments/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/posts/*/like").authenticated()
+                        .requestMatchers("/api/mypage/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/ads/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/ads").permitAll()
-
-
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService),
