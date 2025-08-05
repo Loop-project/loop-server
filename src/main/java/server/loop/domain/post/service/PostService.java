@@ -128,11 +128,22 @@ public class PostService {
 
     // 게시글 삭제
     public void deletePost(Long postId, String email) throws AccessDeniedException {
+        // 1. postId로 게시글을 조회
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+
+        // 2. 작성자 본인 확인
+        // 현재 로그인된 사용자의 이메일과 게시글 작성자의 이메일을 비교
         if (!post.getAuthor().getEmail().equals(email)) {
             throw new AccessDeniedException("게시글을 삭제할 권한이 없습니다.");
         }
-        post.softDelete(); // Soft Delete로 변경
+
+        // 3. (선택 사항) S3 이미지 파일 삭제
+        // 게시글에 연결된 이미지가 있다면, S3에서 먼저 삭제
+        post.getImages().forEach(img -> s3UploadService.deleteImageFromS3(img.getImageUrl()));
+
+        // 4. 데이터베이스에서 게시글을 영구 삭제
+        // post 객체로 삭제해도 되고, post.getId()로 삭제해도 됩니다.
+        postRepository.delete(post); // 또는 postRepository.deleteById(postId);
     }
 }
