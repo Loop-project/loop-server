@@ -29,13 +29,10 @@ public class LikeController {
     @PostMapping(value = "/posts/{postId}/like", produces = "application/json")
     public ResponseEntity<PostLikeResponseDto> toggleLike(@PathVariable Long postId,
                                                           @AuthenticationPrincipal UserDetails userDetails) {
-        likeService.toggleLike(postId, userDetails.getUsername());
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
-        boolean likedByUser = post.getLikes().stream()
-                .anyMatch(like -> like.getUser().getEmail().equals(userDetails.getUsername()));
-
-        return ResponseEntity.ok(new PostLikeResponseDto(likedByUser, post.getLikes().size()));
+        // ⭐ 수정 사항: 서비스에서 직접 DTO를 반환하도록 변경
+        // 이렇게 하면 컨트롤러가 불필요하게 DB를 다시 조회하는 것을 방지합니다.
+        PostLikeResponseDto responseDto = likeService.toggleLike(postId, userDetails.getUsername());
+        return ResponseEntity.ok(responseDto);
     }
 
     @Operation(summary = "전날 작성된 글 중 좋아요 Top 5", description = "전날 작성된 게시글 중 좋아요가 가장 많은 게시글 5개를 반환합니다.")
