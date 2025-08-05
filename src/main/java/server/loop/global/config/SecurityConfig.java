@@ -34,29 +34,27 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // CORS
+    // CORS 설정
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:5173",       // 로컬 개발 환경
-                "https://*.vercel.app",        // Vercel 모든 배포 환경
-                "https://loop.o-r.kr",         // 커스텀 도메인
-                "https://www.loop.o-r.kr"      // www 서브도메인
+
+        // AllowedOrigins는 직접 명시하는 것이 패턴보다 명확합니다.
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "https://*.vercel.app",
+                "https://loop.o-r.kr",
+                "https://www.loop.o-r.kr"
         ));
+
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
-    }
-
-    // OPTIONS 요청 전역 허용
-    @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().requestMatchers(HttpMethod.OPTIONS, "/**");
     }
 
     @Bean
@@ -66,23 +64,49 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // <-- 추가
+                        // ------------------ 공개(Public) API ------------------
+                        // OPTIONS 요청은 모든 경로에 대해 허용 (CORS preflight)
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // 스웨거 문서 및 인증 관련 엔드포인트 허용
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/users/signup").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/users/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/token/reissue").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/users/signup", "/api/users/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/token/reissue").permitAll() // 토큰 재발급
+
+                        // 게시글 조회는 누구나 가능
                         .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/**").permitAll()
+
+                        // 좋아요 Top 5 게시글 조회는 누구나 가능
+                        .requestMatchers(HttpMethod.GET, "/api/posts/top-liked").permitAll()
+
+                        // 특정 게시글의 댓글 목록 조회는 누구나 가능
+                        .requestMatchers(HttpMethod.GET, "/api/posts/*/comments").permitAll()
+
+                        // 약관 조회는 누구나 가능
+                        .requestMatchers(HttpMethod.GET, "/api/terms").permitAll()
+
+                        // ------------------ 인증(Authenticated) API ------------------
+                        // 게시글 관련
                         .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/posts/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/posts/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/posts/*/comments").permitAll()
+
+                        // 댓글 관련
                         .requestMatchers(HttpMethod.POST, "/api/comments").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/comments/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/comments/**").authenticated()
+
+                        // 좋아요 관련
                         .requestMatchers(HttpMethod.POST, "/api/posts/*/like").authenticated()
+
+                        // 마이페이지 관련
                         .requestMatchers("/api/mypage/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/ads/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/ads").permitAll()
+
+                        // 사용자 정보 관련
+                        .requestMatchers("/api/users/me").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/users/me").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/me").authenticated()
+
+                        // 나머지 모든 요청은 인증된 사용자만 접근 가능
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService),
