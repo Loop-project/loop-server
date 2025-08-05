@@ -12,7 +12,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -20,9 +19,7 @@ import server.loop.global.security.CustomUserDetailsService;
 import server.loop.global.security.JwtAuthenticationFilter;
 import server.loop.global.security.JwtTokenProvider;
 
-
 import java.util.List;
-
 
 @Configuration
 @EnableWebSecurity
@@ -42,9 +39,9 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(List.of(
-                "https://*.vercel.app",       // Vercel 프리뷰/프로덕션 전체 허용
-                "https://loop.o-r.kr",
-                "https://www.loop.o-r.kr"
+                "https://*.vercel.app",        // Vercel 모든 배포 환경 허용
+                "https://loop.o-r.kr",         // 커스텀 도메인
+                "https://www.loop.o-r.kr"      // www 서브도메인
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
@@ -55,7 +52,7 @@ public class SecurityConfig {
         return source;
     }
 
-    // OPTIONS 전역 허용
+    // OPTIONS 요청 전역 허용
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring().requestMatchers(HttpMethod.OPTIONS, "/**");
