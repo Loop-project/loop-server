@@ -26,8 +26,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // === 1. 광고 업로드/조회 API는 인증 없이 통과 ===
-        if (path.startsWith("/api/ads")) {
+        // === 0. 인증이 필요 없는 경로는 바로 통과 ===
+        if (path.equals("/api/users/signup") ||
+                path.equals("/api/users/login") ||
+                path.equals("/api/token/reissue") ||
+                path.startsWith("/swagger-ui") ||
+                path.startsWith("/v3/api-docs") ||
+                path.startsWith("/api/ads") ||
+                (path.startsWith("/api/posts") && request.getMethod().equals("GET")) ||
+                (path.startsWith("/api/terms") && request.getMethod().equals("GET"))
+        ) {
             filterChain.doFilter(request, response);
             return;
         }

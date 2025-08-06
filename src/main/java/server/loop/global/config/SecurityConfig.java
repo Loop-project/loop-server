@@ -64,8 +64,6 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // ------------------ 공개(Public) API ------------------
-                        // refresh token
-                        .requestMatchers(HttpMethod.POST, "/api/token/reissue").permitAll()
                         //광고 표기
                         .requestMatchers(HttpMethod.GET, "/api/ads").permitAll()
                         // OPTIONS 요청은 모든 경로에 대해 허용 (CORS preflight)
