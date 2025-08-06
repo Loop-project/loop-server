@@ -15,6 +15,8 @@ import server.loop.domain.user.dto.req.UserUpdateRequestDto;
 import server.loop.domain.user.dto.res.UserResponseDto;
 import server.loop.domain.user.service.UserService;
 
+import java.util.Map;
+
 @Tag(name = "User", description = "사용자 인증 및 관리 API")
 @RestController
 @RequiredArgsConstructor
@@ -25,9 +27,9 @@ public class UserController {
 
     @Operation(summary = "회원가입", description = "이메일, 비밀번호, 닉네임 등으로 사용자를 생성합니다.")
     @PostMapping("/signup")
-    public ResponseEntity<String> signUp(@RequestBody UserSignUpDto userSignUpDto) throws Exception {
+    public ResponseEntity<Map<String, String>> signUp(@RequestBody UserSignUpDto userSignUpDto) throws Exception {
         userService.signUp(userSignUpDto);
-        return ResponseEntity.ok("회원가입이 성공적으로 완료되었습니다.");
+        return ResponseEntity.ok(Map.of("message", "회원가입이 성공적으로 완료되었습니다."));
     }
 
     @Operation(summary = "로그인", description = "이메일, 비밀번호로 로그인하고 Access/Refresh 토큰을 발급받습니다.")
