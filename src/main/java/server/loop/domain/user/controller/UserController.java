@@ -9,10 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import server.loop.domain.auth.dto.TokenDto;
-import server.loop.domain.user.dto.req.UpdateNicknameRequest;
-import server.loop.domain.user.dto.req.UserLoginDto;
-import server.loop.domain.user.dto.req.UserSignUpDto;
-import server.loop.domain.user.dto.req.UserUpdateRequestDto;
+import server.loop.domain.user.dto.req.*;
 import server.loop.domain.user.dto.res.UserResponseDto;
 import server.loop.domain.user.entity.repository.UserRepository;
 import server.loop.domain.user.service.UserService;
@@ -69,12 +66,18 @@ public class UserController {
         return ResponseEntity.ok(userInfo);
     }
     //정보 수정
-    @Operation(summary = "회원 정보 수정", description = "로그인한 사용자의 닉네임 또는 비밀번호를 수정합니다.")
-    @PatchMapping("/me")
-    public ResponseEntity<String> updateUser(@RequestBody UserUpdateRequestDto requestDto,
-                                             @AuthenticationPrincipal UserDetails userDetails) throws Exception {
-        userService.updateUser(requestDto, userDetails.getUsername());
-        return ResponseEntity.ok("회원 정보가 성공적으로 수정되었습니다.");
+    @Operation(summary = "비밀번호 변경", description = "현재 비밀번호를 확인한 뒤 새 비밀번호로 변경합니다.")
+    @PatchMapping("/profile/password")
+    public ResponseEntity<Map<String, String>> updatePassword(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody PasswordUpdateRequestDto requestDto) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        userService.updatePassword(userDetails.getUsername(), requestDto);
+        return ResponseEntity.ok(Map.of("message", "비밀번호가 성공적으로 변경되었습니다."));
     }
 
     //회원 삭제
