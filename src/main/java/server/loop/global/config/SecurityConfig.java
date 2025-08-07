@@ -109,6 +109,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/users/me").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/users/profile/nickname").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/users/password").authenticated()
+                        //알림서비스
+                        .requestMatchers("/ws/**").permitAll()
 
                         // 나머지 모든 요청은 인증된 사용자만 접근 가능
                         .anyRequest().authenticated()
