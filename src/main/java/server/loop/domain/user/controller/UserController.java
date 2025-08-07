@@ -14,6 +14,7 @@ import server.loop.domain.user.dto.req.UserLoginDto;
 import server.loop.domain.user.dto.req.UserSignUpDto;
 import server.loop.domain.user.dto.req.UserUpdateRequestDto;
 import server.loop.domain.user.dto.res.UserResponseDto;
+import server.loop.domain.user.entity.repository.UserRepository;
 import server.loop.domain.user.service.UserService;
 
 import java.util.Map;
@@ -25,6 +26,7 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @Operation(summary = "회원가입", description = "이메일, 비밀번호, 닉네임 등으로 사용자를 생성합니다.")
     @PostMapping("/signup")
@@ -47,6 +49,12 @@ public class UserController {
 
         userService.updateNickname(userDetails.getUsername(), request.getNickname());
         return ResponseEntity.ok("닉네임이 변경되었습니다.");
+    }
+
+    @GetMapping("/check-nickname")
+    public ResponseEntity<Boolean> checkNicknameDuplicate(@RequestParam String nickname) {
+        boolean exists = userRepository.existsByNickname(nickname);
+        return ResponseEntity.ok(!exists); // true = 사용 가능, false = 중복
     }
 
 
