@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import server.loop.domain.notification.service.NotificationService;
 import server.loop.domain.post.dto.comment.req.CommentCreateRequestDto;
 import server.loop.domain.post.dto.comment.req.CommentUpdateRequestDto;
 import server.loop.domain.post.dto.comment.res.CommentResponseDto;
@@ -25,6 +26,7 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final PostRepository postRepository;
+    private final NotificationService notificationService;
 
     // 댓글/대댓글 생성
     public Long createComment(CommentCreateRequestDto requestDto, String email) {
@@ -34,7 +36,6 @@ public class CommentService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
 
         Comment parentComment = null;
-        // 부모 댓글 ID가 있으면 찾아서 설정 (대댓글)
         if (requestDto.getParentId() != null) {
             parentComment = commentRepository.findById(requestDto.getParentId())
                     .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 부모 댓글입니다."));
@@ -48,8 +49,32 @@ public class CommentService {
                 .build();
 
         commentRepository.save(comment);
+
+        // ✅ 알림 로직 시작
+        User postAuthor = post.getAuthor();
+
+        // 1. 대댓글인 경우
+        if (parentComment != null) {
+            User parentAuthor = parentComment.getAuthor();
+            if (!parentAuthor.getId().equals(author.getId())) {
+                // 부모 댓글 작성자에게 알림
+                notificationService.send(author, parentAuthor, post, comment, "내 댓글에 대댓글이 달렸습니다.");
+            }
+
+            // 게시글 작성자와 부모 댓글 작성자가 다르고, 게시글 작성자도 본인이 아닐 경우
+            if (!postAuthor.getId().equals(parentAuthor.getId()) && !postAuthor.getId().equals(author.getId())) {
+                notificationService.send(author, postAuthor, post, comment, "게시글에 새로운 대댓글이 작성되었습니다.");
+            }
+        }
+        // 2. 일반 댓글인 경우
+        else if (!postAuthor.getId().equals(author.getId())) {
+            notificationService.send(author, postAuthor, post, comment, "내 게시글에 댓글이 달렸습니다.");
+        }
+        // ✅ 알림 로직 끝
+
         return comment.getId();
     }
+
 
     // 특정 게시글의 댓글 목록 조회 (계층 구조로 변환)
     @Transactional(readOnly = true)
