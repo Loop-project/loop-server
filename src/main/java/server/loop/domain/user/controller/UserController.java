@@ -41,20 +41,21 @@ public class UserController {
         TokenDto tokenDto = userService.login(loginDto);
         return ResponseEntity.ok(tokenDto);
     }
-    @Operation(summary = "닉네임 변경", description = "이메일, 비밀번호로 로그인하고 Access/Refresh 토큰을 발급받습니다.")
+    @Operation(summary = "닉네임 변경", description = "NickName 변경")
     @PatchMapping("/profile/nickname")
-    public ResponseEntity<String> updateNickname(
+    public ResponseEntity<Map<String, String>> updateNickname(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody UpdateNicknameRequest request) {
 
         userService.updateNickname(userDetails.getUsername(), request.getNickname());
-        return ResponseEntity.ok("닉네임이 변경되었습니다.");
+        return ResponseEntity.ok(Map.of("message", "닉네임이 변경되었습니다."));
     }
-
+    //닉네임 중복 체크
+    @Operation(summary = "닉네임 중복 체크", description = "닉네임 중복 체크 True/False")
     @GetMapping("/check-nickname")
-    public ResponseEntity<Boolean> checkNicknameDuplicate(@RequestParam String nickname) {
-        boolean exists = userRepository.existsByNickname(nickname);
-        return ResponseEntity.ok(!exists); // true = 사용 가능, false = 중복
+    public ResponseEntity<Map<String, Boolean>> checkNicknameDuplicate(@RequestParam String nickname) {
+        boolean isAvailable = !userRepository.existsByNickname(nickname);
+        return ResponseEntity.ok(Map.of("available: ", isAvailable));
     }
 
 
