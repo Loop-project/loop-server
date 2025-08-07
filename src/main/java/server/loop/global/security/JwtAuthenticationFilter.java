@@ -52,12 +52,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // === 3. 토큰이 유효하면 인증 객체 생성 ===
         if (jwtTokenProvider.validateToken(token)) {
             String email = jwtTokenProvider.getEmail(token);
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+            System.out.println("✅ 유효한 토큰. 이메일: " + email);
 
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
             Authentication authentication =
                     new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);
+        } else {
+            System.out.println("❌ 유효하지 않은 토큰");
         }
+
 
         // 4. 다음 필터로 요청 전달
         filterChain.doFilter(request, response);

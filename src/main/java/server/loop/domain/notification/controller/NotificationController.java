@@ -24,10 +24,15 @@ public class NotificationController {
     public ResponseEntity<List<NotificationResponseDto>> getMyNotifications(
             @AuthenticationPrincipal UserDetails userDetails
     ) {
+        if (userDetails == null) {
+            throw new RuntimeException("SecurityContext에서 userDetails가 비어 있음 (403 원인)");
+        }
+
         var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow();
         return ResponseEntity.ok(notificationService.getUserNotifications(user));
     }
+
 
     @PatchMapping("/{id}/read")
     public ResponseEntity<Void> markAsRead(
