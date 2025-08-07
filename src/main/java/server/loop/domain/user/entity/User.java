@@ -96,10 +96,9 @@ public class User extends BaseEntity {
         this.nickname = nickname;
     }
 
-    public void updatePassword(String password) {
-        this.password = password;
+    public void updatePassword(String newEncodedPassword) {
+        this.password = newEncodedPassword;
     }
-
     // 탈퇴 처리
     public void withdraw() {
         this.deletedAt = LocalDateTime.now();
