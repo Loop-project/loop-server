@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import server.loop.domain.auth.dto.TokenDto;
 import server.loop.domain.auth.entity.RefreshToken;
 import server.loop.domain.auth.entity.repo.RefreshTokenRepository;
+import server.loop.domain.user.dto.req.PasswordUpdateRequestDto;
 import server.loop.domain.user.dto.req.UserLoginDto;
 import server.loop.domain.user.dto.req.UserSignUpDto;
 import server.loop.domain.user.dto.req.UserUpdateRequestDto;
@@ -123,6 +124,7 @@ public class UserService {
         userRepository.save(user);
     }
 
+    //닉네임 변경
     public void updateNickname(String email, String newNickname) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
@@ -131,4 +133,20 @@ public class UserService {
         }
         user.setNickname(newNickname);
     }
+    //비밀번호 변경
+    public void updatePassword(String username, PasswordUpdateRequestDto dto) {
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
+
+        // 현재 비밀번호 일치 확인
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+        }
+
+        // 새 비밀번호 암호화 후 저장
+        String encodedNewPassword = passwordEncoder.encode(dto.getNewPassword());
+        user.updatePassword(encodedNewPassword);
+        userRepository.save(user);
+    }
+
 }
