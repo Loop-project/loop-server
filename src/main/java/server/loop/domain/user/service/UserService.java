@@ -122,4 +122,13 @@ public class UserService {
         user.withdraw();
         userRepository.save(user);
     }
+
+    public void updateNickname(String email, String newNickname) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
+        if (newNickname == null || newNickname.isBlank()) {
+            throw new IllegalArgumentException("닉네임은 비어 있을 수 없습니다.");
+        }
+        user.setNickname(newNickname);
+    }
 }

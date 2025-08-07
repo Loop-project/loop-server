@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import server.loop.domain.auth.dto.TokenDto;
+import server.loop.domain.user.dto.req.UpdateNicknameRequest;
 import server.loop.domain.user.dto.req.UserLoginDto;
 import server.loop.domain.user.dto.req.UserSignUpDto;
 import server.loop.domain.user.dto.req.UserUpdateRequestDto;
@@ -38,6 +39,16 @@ public class UserController {
         TokenDto tokenDto = userService.login(loginDto);
         return ResponseEntity.ok(tokenDto);
     }
+    @Operation(summary = "닉네임 변경", description = "이메일, 비밀번호로 로그인하고 Access/Refresh 토큰을 발급받습니다.")
+    @PatchMapping("/profile/nickname")
+    public ResponseEntity<String> updateNickname(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody UpdateNicknameRequest request) {
+
+        userService.updateNickname(userDetails.getUsername(), request.getNickname());
+        return ResponseEntity.ok("닉네임이 변경되었습니다.");
+    }
+
 
     @Operation(summary = "내 정보 조회", description = "현재 로그인된 사용자의 정보를 조회합니다.")
     @GetMapping("/me")
