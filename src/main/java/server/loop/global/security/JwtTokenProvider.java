@@ -57,6 +57,9 @@ public class JwtTokenProvider {
                 .getSubject();
     }
 
+    public String getEmailFromToken(String token) {
+        return getEmail(token);
+    }
     // Token 유효성 검증
     public boolean validateToken(String token) {
         try {
