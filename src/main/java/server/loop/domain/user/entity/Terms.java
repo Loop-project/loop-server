@@ -25,7 +25,7 @@ public class Terms extends BaseEntity {
     private TermsType type; // 약관 종류
 
     @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content; // 약관 내용
 
     @Column(nullable = false)
