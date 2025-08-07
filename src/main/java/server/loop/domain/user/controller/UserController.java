@@ -9,10 +9,12 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import server.loop.domain.auth.dto.TokenDto;
+import server.loop.domain.user.dto.req.UpdateNicknameRequest;
 import server.loop.domain.user.dto.req.UserLoginDto;
 import server.loop.domain.user.dto.req.UserSignUpDto;
 import server.loop.domain.user.dto.req.UserUpdateRequestDto;
 import server.loop.domain.user.dto.res.UserResponseDto;
+import server.loop.domain.user.entity.repository.UserRepository;
 import server.loop.domain.user.service.UserService;
 
 import java.util.Map;
@@ -24,6 +26,7 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @Operation(summary = "회원가입", description = "이메일, 비밀번호, 닉네임 등으로 사용자를 생성합니다.")
     @PostMapping("/signup")
@@ -38,6 +41,23 @@ public class UserController {
         TokenDto tokenDto = userService.login(loginDto);
         return ResponseEntity.ok(tokenDto);
     }
+    @Operation(summary = "닉네임 변경", description = "NickName 변경")
+    @PatchMapping("/profile/nickname")
+    public ResponseEntity<Map<String, String>> updateNickname(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody UpdateNicknameRequest request) {
+
+        userService.updateNickname(userDetails.getUsername(), request.getNickname());
+        return ResponseEntity.ok(Map.of("message", "닉네임이 변경되었습니다."));
+    }
+    //닉네임 중복 체크
+    @Operation(summary = "닉네임 중복 체크", description = "닉네임 중복 체크 True/False")
+    @GetMapping("/check-nickname")
+    public ResponseEntity<Map<String, Boolean>> checkNicknameDuplicate(@RequestParam String nickname) {
+        boolean isAvailable = !userRepository.existsByNickname(nickname);
+        return ResponseEntity.ok(Map.of("available: ", isAvailable));
+    }
+
 
     @Operation(summary = "내 정보 조회", description = "현재 로그인된 사용자의 정보를 조회합니다.")
     @GetMapping("/me")

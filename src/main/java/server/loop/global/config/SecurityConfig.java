@@ -85,6 +85,7 @@ public class SecurityConfig {
                         // 약관 조회는 누구나 가능
                         .requestMatchers(HttpMethod.GET, "/api/terms").permitAll()
 
+                        .requestMatchers(HttpMethod.GET, "/api/users/check-nickname").permitAll()
                         // ------------------ 인증(Authenticated) API ------------------
                         // 게시글 관련
                         .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
