@@ -111,7 +111,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/users/password").authenticated()
                         //알림서비스
                         .requestMatchers("/ws/**").permitAll()
-
+                        .requestMatchers(HttpMethod.GET, "/api/notifications").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/notifications/**").authenticated()
                         // 나머지 모든 요청은 인증된 사용자만 접근 가능
                         .anyRequest().authenticated()
                 )
