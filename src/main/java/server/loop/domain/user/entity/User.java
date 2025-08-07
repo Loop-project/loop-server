@@ -86,6 +86,10 @@ public class User extends BaseEntity {
         comments.add(comment);
         comment.setAuthor(this);
     }
+    //닉네임 수정
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
 
     // === 도메인 로직 ===
     public void updateNickname(String nickname) {
