@@ -22,7 +22,9 @@ import server.loop.domain.user.entity.User;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Tag(name = "Post", description = "게시글 관리 API")
 @RestController
@@ -73,11 +75,16 @@ public class PostController {
     // 게시글 삭제
     @Operation(summary = "게시글 삭제", description = "작성자 본인의 게시글을 삭제합니다.")
     @DeleteMapping("/{postId}")
-    public ResponseEntity<String> deletePost(@PathVariable Long postId,
-                                             @AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
+    public ResponseEntity<Map<String, Object>> deletePost(@PathVariable Long postId,
+                                                          @AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
         postService.deletePost(postId, userDetails.getUsername());
-        return ResponseEntity.ok("게시글이 성공적으로 삭제되었습니다. ID: "+postId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "게시글이 성공적으로 삭제되었습니다.");
+        response.put("postId", postId);
+        return ResponseEntity.ok(response);
     }
+
 
     // 카테고리 별 게시글 조회
     @Operation(summary = "게시글 목록 조회 (Page)", description = "카테고리별 또는 전체 게시글 목록을 조회합니다.")
