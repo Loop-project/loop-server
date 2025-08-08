@@ -41,6 +41,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Authentication authentication =
                     new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            System.out.println("Jwt 필터 통과");
+            System.out.println("토큰 유효 여부: " + jwtTokenProvider.validateToken(token));
+            System.out.println("이메일: " + jwtTokenProvider.getEmail(token));
+            System.out.println("SecurityContext: " + SecurityContextHolder.getContext().getAuthentication());
+
         } else {
             System.out.println("❌ 유효하지 않은 토큰");
         }
