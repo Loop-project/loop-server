@@ -23,4 +23,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
             "WHERE c.author = :author AND c.post.isDeleted = false " +
             "ORDER BY c.post.createdAt DESC")
     Slice<Post> findActivePostsCommentedByUser(@Param("author") User author, Pageable pageable);
+
+    List<Comment> findByPostOrderByCreatedAtAsc(Post post);
+
 }
