@@ -2,6 +2,7 @@ package server.loop.domain.notification.controller;
 
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,6 +12,7 @@ import server.loop.domain.notification.service.NotificationService;
 import server.loop.domain.user.entity.repository.UserRepository;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -21,15 +23,15 @@ public class NotificationController {
     private final UserRepository userRepository;
 
     @GetMapping
-    public ResponseEntity<List<NotificationResponseDto>> getMyNotifications(
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
+    public ResponseEntity<?> getMyNotifications(@AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails == null) {
-            throw new RuntimeException("SecurityContext에서 userDetails가 비어 있음 (403 원인)");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "SecurityContext에서 userDetails가 비어 있음"));
         }
 
         var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow();
+
         return ResponseEntity.ok(notificationService.getUserNotifications(user));
     }
 
