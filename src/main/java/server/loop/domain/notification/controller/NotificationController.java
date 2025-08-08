@@ -24,6 +24,7 @@ public class NotificationController {
 
     @GetMapping
     public ResponseEntity<?> getMyNotifications(@AuthenticationPrincipal UserDetails userDetails) {
+        System.out.println(">>> userDetails: " + userDetails); // 로그 확인
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "SecurityContext에서 userDetails가 비어 있음"));
