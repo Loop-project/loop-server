@@ -41,17 +41,19 @@ public class CommentResponseDto {
             this.authorId = null;
         } else {
             this.authorNickname = author.getNickname();
-            this.authorId = author.getId();   // 작성자 ID 세팅
+            this.authorId = author.getId();
         }
 
+        // ⭐ 수정된 부분: replies 목록은 isDeleted 여부와 관계없이 항상 초기화
+        this.replies = comment.getChildren().stream()
+                .map(CommentResponseDto::new)
+                .collect(Collectors.toList());
+
+        // ⭐ 수정된 부분: content만 isDeleted 여부에 따라 변경
         if (comment.isDeleted()) {
             this.content = "삭제된 댓글입니다.";
-            this.replies = List.of();
         } else {
             this.content = comment.getContent();
-            this.replies = comment.getChildren().stream()
-                    .map(CommentResponseDto::new)
-                    .collect(Collectors.toList());
         }
     }
 }
