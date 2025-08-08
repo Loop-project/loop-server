@@ -58,4 +58,14 @@ public class NotificationController {
         notificationService.deleteAllByUser(user);
         return ResponseEntity.ok().build();
     }
+
+    @PatchMapping("/read-all")
+    public ResponseEntity<Void> markAllAsRead(
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        var user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow();
+        notificationService.markAllAsRead(user);
+        return ResponseEntity.ok().build();
+    }
 }
