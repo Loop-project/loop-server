@@ -23,7 +23,7 @@ public class NotificationService {
     private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
-    public void send(User sender, User receiver, Post post, Comment comment, String message) {
+    public void send(User sender, User receiver, Post post, Comment comment, String postTitle, String message) {
         if (sender.getId().equals(receiver.getId())) return;
 
         Notification notification = Notification.builder()
@@ -31,6 +31,7 @@ public class NotificationService {
                 .receiver(receiver)
                 .post(post)
                 .comment(comment)
+                .postTitle(postTitle)
                 .message(message)
                 .build();
 
@@ -39,6 +40,7 @@ public class NotificationService {
         NotificationResponseDto dto = NotificationResponseDto.from(notification);
         messagingTemplate.convertAndSendToUser(receiver.getEmail(), "/queue/notifications", dto);
     }
+
 
     @Transactional(readOnly = true)
     public Page<NotificationResponseDto> getUserNotifications(User receiver, Pageable pageable) {

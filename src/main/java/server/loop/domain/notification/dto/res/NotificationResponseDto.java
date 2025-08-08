@@ -13,6 +13,7 @@ public class NotificationResponseDto {
     private String senderUsername;
     private String message;
     private boolean isRead;
+    private String postTitle;
     private Long postId;
     private Long commentId;
     private LocalDateTime createdAt;
@@ -24,6 +25,7 @@ public class NotificationResponseDto {
                 .message(notification.getMessage())
                 .isRead(notification.isRead())
                 .postId(notification.getPost() != null ? notification.getPost().getId() : null)
+                .postTitle(notification.getPostTitle())
                 .commentId(notification.getComment() != null ? notification.getComment().getId() : null)
                 .createdAt(notification.getCreatedAt())
                 .build();
