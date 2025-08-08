@@ -11,5 +11,8 @@ import server.loop.domain.user.entity.User;
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
     @EntityGraph(attributePaths = {"sender"})
     Page<Notification> findByReceiverOrderByCreatedAtDesc(User receiver, Pageable pageable);
+
+    void deleteByReceiver(User receiver);
+
 }
 

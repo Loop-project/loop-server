@@ -55,4 +55,9 @@ public class NotificationService {
         }
         notification.markAsRead();
     }
+
+    @Transactional
+    public void deleteAllByUser(User user) {
+        notificationRepository.deleteByReceiver(user);
+    }
 }

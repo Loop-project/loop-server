@@ -50,4 +50,12 @@ public class NotificationController {
         notificationService.markAsRead(id, user);
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAll(@AuthenticationPrincipal UserDetails userDetails) {
+        var user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow();
+        notificationService.deleteAllByUser(user);
+        return ResponseEntity.ok().build();
+    }
 }
