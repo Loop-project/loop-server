@@ -68,4 +68,9 @@ public class NotificationService {
             n.markAsRead();
         }
     }
+
+    @Transactional(readOnly = true)
+    public int countUnreadNotifications(User user) {
+        return notificationRepository.countByReceiverAndIsReadFalse(user);
+    }
 }
