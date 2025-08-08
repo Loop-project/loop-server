@@ -52,23 +52,18 @@ public class CommentService {
 
         // ✅ 알림 로직 시작
         User postAuthor = post.getAuthor();
+        String postTitle = post.getTitle(); // 게시글 제목
 
-        // 1. 대댓글인 경우
         if (parentComment != null) {
             User parentAuthor = parentComment.getAuthor();
             if (!parentAuthor.getId().equals(author.getId())) {
-                // 부모 댓글 작성자에게 알림
-                notificationService.send(author, parentAuthor, post, comment, "Your comment has a new reply.");
+                notificationService.send(author, parentAuthor, post, comment, postTitle, "Your comment has a new reply.");
             }
-
-            // 게시글 작성자와 부모 댓글 작성자가 다르고, 게시글 작성자도 본인이 아닐 경우
             if (!postAuthor.getId().equals(parentAuthor.getId()) && !postAuthor.getId().equals(author.getId())) {
-                notificationService.send(author, postAuthor, post, comment, "Your post has a new nested comment.");
+                notificationService.send(author, postAuthor, post, comment, postTitle, "Your post has a new nested comment.");
             }
-        }
-        // 2. 일반 댓글인 경우
-        else if (!postAuthor.getId().equals(author.getId())) {
-            notificationService.send(author, postAuthor, post, comment, "Your post has a new comment.");
+        } else if (!postAuthor.getId().equals(author.getId())) {
+            notificationService.send(author, postAuthor, post, comment, postTitle, "Your post has a new comment.");
         }
         // ✅ 알림 로직 끝
 
