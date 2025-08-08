@@ -62,8 +62,12 @@ public class Comment extends BaseEntity {
         this.post = post;
     }
 
-    // === 도메인 로직 ===
     public void update(String content) {
         this.content = content;
+    }
+    @Override
+    public void softDelete() {
+        super.softDelete();
+        this.content = "delete comment";
     }
 }
