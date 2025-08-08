@@ -55,4 +55,22 @@ public class NotificationService {
         }
         notification.markAsRead();
     }
+
+    @Transactional
+    public void deleteAllByUser(User user) {
+        notificationRepository.deleteByReceiver(user);
+    }
+
+    @Transactional
+    public void markAllAsRead(User user) {
+        List<Notification> notifications = notificationRepository.findByReceiver(user);
+        for (Notification n : notifications) {
+            n.markAsRead();
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public int countUnreadNotifications(User user) {
+        return notificationRepository.countByReceiverAndIsReadFalse(user);
+    }
 }

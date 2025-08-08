@@ -50,4 +50,32 @@ public class NotificationController {
         notificationService.markAsRead(id, user);
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAll(@AuthenticationPrincipal UserDetails userDetails) {
+        var user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow();
+        notificationService.deleteAllByUser(user);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/read-all")
+    public ResponseEntity<Void> markAllAsRead(
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        var user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow();
+        notificationService.markAllAsRead(user);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/unread-count")
+    public ResponseEntity<Integer> getUnreadNotificationCount(
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        var user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow();
+        int count = notificationService.countUnreadNotifications(user);
+        return ResponseEntity.ok(count);
+    }
 }
