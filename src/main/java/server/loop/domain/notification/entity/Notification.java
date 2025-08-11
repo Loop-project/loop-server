@@ -2,6 +2,8 @@ package server.loop.domain.notification.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import server.loop.domain.post.entity.Comment;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.post.entity.Post;
@@ -28,6 +30,8 @@ public class Notification {
     private Post post;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "comment_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Comment comment;
 
     private String message;
@@ -39,6 +43,8 @@ public class Notification {
 
     @Column(nullable = false)
     private String postTitle;
+
+
 
     @PrePersist
     protected void onCreate() {

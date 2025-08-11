@@ -89,6 +89,9 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/api/users/check-nickname").permitAll()
                         // ------------------ 인증(Authenticated) API ------------------
+                        // 신고(Report) 명시 추가
+                        .requestMatchers(HttpMethod.POST, "/api/posts/*/report").authenticated()
+
                         // 게시글 관련
                         .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/posts/**").authenticated()
@@ -111,6 +114,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/users/me").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/users/profile/nickname").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/users/password").authenticated()
+
                         //알림서비스
                         .requestMatchers("/ws/**", "/api/ws/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/notifications").authenticated()
