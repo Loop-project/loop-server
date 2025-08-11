@@ -8,6 +8,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import server.loop.domain.post.dto.report.req.PostReportRequestDto;
+import server.loop.domain.post.dto.report.res.ReportResponseDto;
 import server.loop.domain.post.service.ReportService;
 
 @Tag(name = "Report", description = "신고 관리 API")
@@ -20,11 +21,10 @@ public class ReportController {
 
     @Operation(summary = "게시글 신고", description = "게시글을 신고합니다. 3회 누적 시 게시글은 삭제됩니다.")
     @PostMapping("/posts/{postId}/report")
-    public ResponseEntity<String> reportPost(@PathVariable Long postId,
-                                             @RequestBody PostReportRequestDto requestDto, // DTO로 받도록 변경
-                                             @AuthenticationPrincipal UserDetails userDetails) {
-        // 서비스에 DTO의 reason을 함께 전달
+    public ResponseEntity<ReportResponseDto> reportPost(@PathVariable Long postId,
+                                                        @RequestBody PostReportRequestDto requestDto,
+                                                        @AuthenticationPrincipal UserDetails userDetails) {
         String message = reportService.reportPost(postId, userDetails.getUsername(), requestDto.getReason());
-        return ResponseEntity.ok(message);
+        return ResponseEntity.ok(new ReportResponseDto(message));
     }
 }
