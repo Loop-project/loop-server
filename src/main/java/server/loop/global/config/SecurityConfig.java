@@ -90,7 +90,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/users/check-nickname").permitAll()
                         // ------------------ 인증(Authenticated) API ------------------
                         // 신고(Report) 명시 추가
-                        .requestMatchers(HttpMethod.POST, "/api/posts/*/report").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/posts/*/report", "/api/posts/**/report").authenticated()
 
                         // 게시글 관련
                         .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
