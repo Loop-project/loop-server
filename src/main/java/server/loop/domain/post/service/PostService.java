@@ -141,7 +141,6 @@ public class PostService {
             throw new AccessDeniedException("게시글을 삭제할 권한이 없습니다.");
         }
 
-        // 4. 게시글 삭제 로직 (여기서 외래 키에 따른 이미지 삭제 등)
-        postRepository.delete(post);
+        post.softDelete();
     }
 }
