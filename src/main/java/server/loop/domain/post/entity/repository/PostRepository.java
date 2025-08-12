@@ -40,4 +40,15 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     // 작성자별 목록: 삭제되지 않은 것만
     @Query("SELECT p FROM Post p WHERE p.author = :author AND p.isDeleted = false ORDER BY p.createdAt DESC")
     Slice<Post> findActivePostsByAuthor(@Param("author") User author, Pageable pageable);
+
+    //검색 API 사용
+    @Query("""
+           SELECT p FROM Post p
+           WHERE p.isDeleted = false
+             AND (LOWER(p.title)   LIKE LOWER(CONCAT('%', :q, '%'))
+               OR LOWER(p.content) LIKE LOWER(CONCAT('%', :q, '%')))
+           ORDER BY p.createdAt DESC
+           """)
+    Slice<Post> searchActivePosts(@Param("q") String q, Pageable pageable);
+
 }

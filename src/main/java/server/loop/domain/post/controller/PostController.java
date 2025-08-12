@@ -42,6 +42,8 @@ public class PostController {
             @RequestPart(value = "images", required = false) List<MultipartFile> images, // 3. 파일 부분
             @AuthenticationPrincipal UserDetails userDetails) throws IOException {
 
+        System.out.println("[CREATE_POST] dto=" + requestDto + ", category=" + requestDto.getCategory()
+                + ", principal=" + (userDetails!=null?userDetails.getUsername():"null"));
         Long postId = postService.createPost(requestDto, images, userDetails.getUsername());
         return ResponseEntity.ok("게시글이 성공적으로 생성되었습니다. ID: " + postId);
     }
@@ -97,4 +99,14 @@ public class PostController {
         SliceResponseDto<PostResponseDto> result = postService.getPostsSlice(category, pageable);
         return ResponseEntity.ok(result);
     }
+
+    @Operation(summary = "게시글 검색", description = "카테고리와 상관없이 제목/본문에서 키워드로 최신순 검색합니다. q가 비어있으면 전체 최신순 목록과 동일합니다.")
+    @GetMapping("/search")
+    public ResponseEntity<SliceResponseDto<PostResponseDto>> searchPosts(
+            @RequestParam(required = false, defaultValue = "") String q,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return ResponseEntity.ok(postService.searchPosts(q, pageable));
+    }
+
 }

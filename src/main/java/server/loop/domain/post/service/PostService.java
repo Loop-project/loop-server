@@ -143,4 +143,17 @@ public class PostService {
 
         post.softDelete();
     }
+
+    @Transactional(readOnly = true)
+    public SliceResponseDto<PostResponseDto> searchPosts(String q, Pageable pageable) {
+        Slice<Post> postSlice;
+        if (q == null || q.trim().isEmpty()) {
+            // 키워드 없으면 전체 최신순과 동일하게
+            postSlice = postRepository.findAllActivePosts(pageable);
+        } else {
+            postSlice = postRepository.searchActivePosts(q.trim(), pageable);
+        }
+        Slice<PostResponseDto> dtoSlice = postSlice.map(PostResponseDto::new);
+        return new SliceResponseDto<>(dtoSlice);
+    }
 }
