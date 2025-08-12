@@ -93,8 +93,7 @@ public class PostController {
     @GetMapping
     public ResponseEntity<SliceResponseDto<PostResponseDto>> getPostsSlice(
             @RequestParam(required = false) Category category,
-            // 기본 20개씩, 최신순으로 정렬
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 10) Pageable pageable) {
 
         SliceResponseDto<PostResponseDto> result = postService.getPostsSlice(category, pageable);
         return ResponseEntity.ok(result);

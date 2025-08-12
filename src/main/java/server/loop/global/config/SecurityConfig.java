@@ -96,6 +96,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/posts/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/posts/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/posts/search/**").authenticated()
 
                         // 댓글 관련
                         .requestMatchers(HttpMethod.POST, "/api/comments").authenticated()
