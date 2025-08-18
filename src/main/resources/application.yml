@@ -7,7 +7,8 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-
+  jackson:
+    time-zone: Asia/Shanghai # 중국시 사용
   jpa:
     hibernate:
       ddl-auto: update
