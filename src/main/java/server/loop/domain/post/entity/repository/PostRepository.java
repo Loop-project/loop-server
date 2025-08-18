@@ -51,4 +51,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
            """)
     Slice<Post> searchActivePosts(@Param("q") String q, Pageable pageable);
 
+    //게시글 수정시
+    boolean existsByIdAndAuthorId(Long id, Long authorId);
+
 }
