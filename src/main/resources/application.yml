@@ -4,11 +4,21 @@ server:
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
+    # ⛳ ${DB_URL} 실제 값에 반드시 아래 파라미터 포함:
+    #   serverTimezone=Asia/Shanghai
+    # 예) jdbc:mysql://host:3306/loopDB?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+
   jackson:
-    time-zone: Asia/Shanghai # 중국시 사용
+    # LocalDateTime은 타임존이 없으므로, 보정 끄고 ISO 문자열로만 내보냄
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      adjust-dates-to-context-time-zone: false
+    # time-zone: (설정하지 않음)
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -16,9 +26,7 @@ spring:
       hibernate:
         show_sql: true
         format_sql: true
-        jdbc:
-          # ✅ Hibernate 세션 타임존을 상하이로 통일 (가장 중요)
-          time_zone: Asia/Shanghai
+        # ⚠️ 여기 있던 jdbc.time_zone 은 제거합니다 (DATETIME + LocalDateTime 조합에서 이중보정 유발)
     open-in-view: false
 
   servlet:
