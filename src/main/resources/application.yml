@@ -16,6 +16,9 @@ spring:
       hibernate:
         show_sql: true
         format_sql: true
+        jdbc:
+          # ✅ Hibernate 세션 타임존을 상하이로 통일 (가장 중요)
+          time_zone: Asia/Shanghai
     open-in-view: false
 
   servlet:
