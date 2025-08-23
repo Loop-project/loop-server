@@ -43,12 +43,14 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     //검색 API 사용
     @Query("""
-           SELECT p FROM Post p
-           WHERE p.isDeleted = false
-             AND (LOWER(p.title)   LIKE LOWER(CONCAT('%', :q, '%'))
-               OR LOWER(p.content) LIKE LOWER(CONCAT('%', :q, '%')))
-           ORDER BY p.createdAt DESC
-           """)
+    SELECT p FROM Post p
+    WHERE p.isDeleted = false
+      AND (
+           p.title   LIKE CONCAT('%', :q, '%')
+        OR p.content LIKE CONCAT('%', :q, '%')
+      )
+    ORDER BY p.createdAt DESC
+    """)
     Slice<Post> searchActivePosts(@Param("q") String q, Pageable pageable);
 
     //게시글 수정시
