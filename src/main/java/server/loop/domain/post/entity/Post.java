@@ -36,11 +36,11 @@ public class Post extends BaseEntity {
     @Column(name = "category", nullable = false)
     private Category category; // 카테고리
 
-    @Lob
     @Column(name = "title", nullable = false)
     private String title; // 제목
 
-    @Column(name = "content", nullable = false)
+    @Lob
+    @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     private String content; // 내용
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
