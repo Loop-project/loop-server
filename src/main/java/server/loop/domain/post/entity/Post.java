@@ -36,6 +36,7 @@ public class Post extends BaseEntity {
     @Column(name = "category", nullable = false)
     private Category category; // 카테고리
 
+    @Lob
     @Column(name = "title", nullable = false)
     private String title; // 제목
 
