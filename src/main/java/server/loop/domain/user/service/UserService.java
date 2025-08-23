@@ -116,12 +116,11 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
         // Refresh Token 삭제
-        refreshTokenRepository.findByUser(user)
-                .ifPresent(refreshTokenRepository::delete);
+        refreshTokenRepository.deleteByUserId(user.getId());
 
         // User Soft Delete
         user.withdraw();
-        userRepository.save(user);
+
     }
 
     //닉네임 변경
