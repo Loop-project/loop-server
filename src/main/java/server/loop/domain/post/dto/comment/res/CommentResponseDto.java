@@ -51,7 +51,7 @@ public class CommentResponseDto {
 
         // ⭐ 수정된 부분: content만 isDeleted 여부에 따라 변경
         if (comment.isDeleted()) {
-            this.content = "삭제된 댓글입니다.";
+            this.content = "delete comment";
         } else {
             this.content = comment.getContent();
         }
