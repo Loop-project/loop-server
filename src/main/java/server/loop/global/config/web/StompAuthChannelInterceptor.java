@@ -1,6 +1,8 @@
 package server.loop.global.config.web;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -17,6 +19,7 @@ import server.loop.global.security.JwtTokenProvider;
 @RequiredArgsConstructor
 public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
+    private static final Logger log = LoggerFactory.getLogger(StompAuthChannelInterceptor.class);
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
 
@@ -26,7 +29,9 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
                 MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
+            log.info("STOMP CONNECT attempt received.");
             String authHeader = accessor.getFirstNativeHeader("Authorization");
+            log.info("Authorization header from STOMP CONNECT: {}", authHeader);
 
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = authHeader.substring(7);
@@ -36,7 +41,10 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
-                accessor.setUser(authentication); // ★ 중요: SecurityContext가 아닌 accessor에 설정
+                accessor.setUser(authentication);
+                log.info("STOMP user successfully authenticated: {}", email);
+            } else {
+                log.warn("STOMP CONNECT failed: Authorization header is missing or invalid.");
             }
         }
 
