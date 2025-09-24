@@ -99,6 +99,14 @@ public class ChatService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public ChatRoomResponse getRoom(UserDetails userDetails, String roomId) {
+        User me = currentUserOrNull(userDetails);
+        ChatRoom room = getRoomOrThrow(roomId);
+        boolean joined = (me != null) && memberRepository.existsByRoomAndUser(room, me);
+        return toRoomResponse(room, me, joined);
+    }
+
     // ==== Message ====
 
     @Transactional

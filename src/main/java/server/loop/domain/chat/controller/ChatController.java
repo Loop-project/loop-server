@@ -79,4 +79,10 @@ public class ChatController {
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(chatService.getMessages(userDetails, roomId, size, beforeId));
     }
+
+    @GetMapping("/rooms/{roomId}")
+    public ResponseEntity<ChatRoomResponse> getRoom(@PathVariable String roomId,
+                                                    @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(chatService.getRoom(userDetails, roomId));
+    }
 }
