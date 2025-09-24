@@ -24,11 +24,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String path = request.getRequestURI();
-        if (path.startsWith("/ws/") || path.startsWith("/api/ws/")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+//        String path = request.getRequestURI();
+//        if (path.startsWith("/ws/") || path.startsWith("/api/ws/")) {
+//            filterChain.doFilter(request, response);
+//            return;
+//        }
 
         String token = resolveToken(request);
 

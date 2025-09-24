@@ -70,6 +70,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/ads").permitAll()
                         // OPTIONS 요청은 모든 경로에 대해 허용 (CORS preflight)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/ws/**", "/api/ws/**").permitAll()
+
                         // 스웨거 문서 및 인증 관련 엔드포인트 허용
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users/signup", "/api/users/login").permitAll()
@@ -120,7 +122,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/chat/**").authenticated()
 
                         //알림서비스
-                        .requestMatchers("/ws/**", "/api/ws/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/notifications").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/notifications/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/notifications/unread-count").authenticated()
