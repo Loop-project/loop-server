@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import server.loop.domain.chat.dto.req.ChatMessageSendRequest;
 import server.loop.domain.chat.dto.req.ChatRoomCreateRequest;
 import server.loop.domain.chat.dto.res.ChatMessageResponse;
+import server.loop.domain.chat.dto.res.ChatRoomMemberResponse;
 import server.loop.domain.chat.dto.res.ChatRoomResponse;
 import server.loop.domain.chat.entity.ChatMessage;
 import server.loop.domain.chat.entity.ChatRoom;
@@ -99,6 +100,14 @@ public class ChatService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public ChatRoomResponse getRoom(UserDetails userDetails, String roomId) {
+        User me = currentUserOrNull(userDetails);
+        ChatRoom room = getRoomOrThrow(roomId);
+        boolean joined = (me != null) && memberRepository.existsByRoomAndUser(room, me);
+        return toRoomResponse(room, me, joined);
+    }
+
     // ==== Message ====
 
     @Transactional
@@ -170,6 +179,13 @@ public class ChatService {
 
     private ChatRoomResponse toRoomResponse(ChatRoom r, User me, boolean joined) {
         long memberCount = memberRepository.countByRoom(r);
+        List<ChatRoomMemberResponse> members = memberRepository.findByRoom(r).stream()
+                .map(member -> ChatRoomMemberResponse.builder()
+                        .userId(member.getUser().getId())
+                        .nickname(member.getUser().getNickname())
+                        .build())
+                .toList();
+
         return ChatRoomResponse.builder()
                 .roomId(r.getId())
                 .title(r.getTitle())
@@ -178,6 +194,7 @@ public class ChatService {
                 .memberCount(memberCount)
                 .createdAt(r.getCreatedAt().toEpochMilli())
                 .joined(joined)
+                .members(members)
                 .build();
     }
 
