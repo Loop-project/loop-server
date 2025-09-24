@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.loop.domain.chat.dto.req.ChatMessageSendRequest;
@@ -19,7 +20,6 @@ import server.loop.domain.chat.entity.repository.ChatRoomRepository;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
 
-import java.security.Principal;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
@@ -35,9 +35,10 @@ public class ChatService {
     private final SimpMessagingTemplate messagingTemplate;
 
     // ==== Room ====
+
     @Transactional
-    public ChatRoomResponse createRoom(Principal principal, ChatRoomCreateRequest req) {
-        User owner = currentUser(principal);
+    public ChatRoomResponse createRoom(UserDetails userDetails, ChatRoomCreateRequest req) {
+        User owner = currentUser(userDetails);
         String id = UUID.randomUUID().toString();
 
         ChatRoom room = ChatRoom.builder()
@@ -56,8 +57,8 @@ public class ChatService {
     }
 
     @Transactional
-    public void joinPublicRoom(Principal principal, String roomId) {
-        User user = currentUser(principal);
+    public void joinPublicRoom(UserDetails userDetails, String roomId) {
+        User user = currentUser(userDetails);
         ChatRoom room = getRoomOrThrow(roomId);
 
         if (!"PUBLIC".equals(room.getVisibility())) {
@@ -70,36 +71,39 @@ public class ChatService {
     }
 
     @Transactional
-    public void leaveRoom(Principal principal, String roomId) {
-        User user = currentUser(principal);
+    public void leaveRoom(UserDetails userDetails, String roomId) {
+        User user = currentUser(userDetails);
         ChatRoom room = getRoomOrThrow(roomId);
 
         memberRepository.findByRoomAndUser(room, user)
                 .ifPresent(memberRepository::delete);
 
-        // 방장은 나갈 수 없게 할지, 위임 후 나가게 할지 정책에 따라 변경
-        // 여기서는 방장도 나갈 수 있게 두되, 방 멤버가 0명이면 방을 지우는 옵션을 넣을 수도 있음(생략)
+        // 정책적으로 방장 처리/방 삭제 자동화가 필요하면 여기에 추가
     }
 
     @Transactional(readOnly = true)
-    public Page<ChatRoomResponse> listPublicRooms(Principal principal, int page, int size) {
-        User me = currentUser(principal);
+    public Page<ChatRoomResponse> listPublicRooms(UserDetails userDetails, int page, int size) {
+        User me = currentUserOrNull(userDetails); // 공개 API: null 허용
         Page<ChatRoom> pages = chatRoomRepository.findByVisibility("PUBLIC", PageRequest.of(page, size));
-        return pages.map(r -> toRoomResponse(r, me, memberRepository.existsByRoomAndUser(r, me)));
+        return pages.map(r -> {
+            boolean joined = (me != null) && memberRepository.existsByRoomAndUser(r, me);
+            return toRoomResponse(r, me, joined);
+        });
     }
 
     @Transactional(readOnly = true)
-    public List<ChatRoomResponse> listMyRooms(Principal principal) {
-        User me = currentUser(principal);
+    public List<ChatRoomResponse> listMyRooms(UserDetails userDetails) {
+        User me = currentUser(userDetails);
         return memberRepository.findByUser(me).stream()
                 .map(m -> toRoomResponse(m.getRoom(), me, true))
                 .toList();
     }
 
     // ==== Message ====
+
     @Transactional
-    public ChatMessageResponse sendMessage(Principal principal, ChatMessageSendRequest req) {
-        User sender = currentUser(principal);
+    public ChatMessageResponse sendMessage(UserDetails userDetails, ChatMessageSendRequest req) {
+        User sender = currentUser(userDetails);
         ChatRoom room = getRoomOrThrow(req.getRoomId());
 
         // 멤버십 검증(공개방이라도 "보내기"는 가입자만 허용)
@@ -121,11 +125,11 @@ public class ChatService {
     }
 
     @Transactional(readOnly = true)
-    public List<ChatMessageResponse> getMessages(Principal principal, String roomId, int size, Long beforeId) {
-        User me = currentUser(principal);
+    public List<ChatMessageResponse> getMessages(UserDetails userDetails, String roomId, int size, Long beforeId) {
+        User me = currentUser(userDetails);
         ChatRoom room = getRoomOrThrow(roomId);
 
-        // 읽기 권한: 공개방 → 누구나 읽기 허용으로 바꿔도 됨(지금은 멤버만 읽기)
+        // 읽기 권한: 현재 정책은 멤버만 허용 (공개 읽기 원하면 여기 완화)
         if (!memberRepository.existsByRoomAndUser(room, me)) {
             throw new IllegalStateException("해당 채팅방의 멤버가 아닙니다.");
         }
@@ -139,13 +143,20 @@ public class ChatService {
     }
 
     // ==== Helpers ====
-    private User currentUser(Principal principal) {
-        if (principal == null || principal.getName() == null) {
+
+    private User currentUser(UserDetails userDetails) {
+        if (userDetails == null || userDetails.getUsername() == null) {
             throw new IllegalStateException("인증 정보가 없습니다.");
         }
-        String email = principal.getName(); // StompAuthChannelInterceptor에서 email을 username으로 셋업
+        String email = userDetails.getUsername(); // CustomUserDetailsService에서 username=email
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다. email=" + email));
+    }
+
+    private User currentUserOrNull(UserDetails userDetails) {
+        if (userDetails == null || userDetails.getUsername() == null) return null;
+        String email = userDetails.getUsername();
+        return userRepository.findByEmail(email).orElse(null);
     }
 
     private ChatRoom getRoomOrThrow(String roomId) {
@@ -175,7 +186,7 @@ public class ChatService {
                 .messageId(m.getId())
                 .roomId(m.getRoom().getId())
                 .senderId(m.getSender().getId())
-                .senderNickname(m.getSender().getNickname()) // 프로젝트 필드명에 맞게
+                .senderNickname(m.getSender().getNickname())
                 .content(m.getContent())
                 .type(m.getType())
                 .createdAt(m.getCreatedAt().atZone(ZoneOffset.UTC).toInstant().toEpochMilli())

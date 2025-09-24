@@ -90,6 +90,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/terms").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/users/check-nickname").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/chat/rooms/public/**").permitAll()
+
                         // ------------------ 인증(Authenticated) API ------------------
                         // 신고(Report) 명시 추가
                         .requestMatchers(HttpMethod.POST, "/api/posts/*/report").authenticated()
