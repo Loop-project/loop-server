@@ -116,6 +116,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/users/profile/nickname").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/users/password").authenticated()
 
+                        // 채팅 관련
+                        .requestMatchers("/api/chat/**").authenticated()
+
                         //알림서비스
                         .requestMatchers("/ws/**", "/api/ws/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/notifications").authenticated()
