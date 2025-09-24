@@ -47,13 +47,13 @@ public class ChatService {
                 .visibility(normalizeVisibility(req.getVisibility()))
                 .owner(owner)
                 .build();
-        chatRoomRepository.save(room);
+        ChatRoom savedRoom = chatRoomRepository.save(room);
 
         // owner 자동 가입
         memberRepository.save(ChatRoomMember.builder()
-                .room(room).user(owner).role("OWNER").build());
+                .room(savedRoom).user(owner).role("OWNER").build());
 
-        return toRoomResponse(room, owner, true);
+        return toRoomResponse(savedRoom, owner, true);
     }
 
     @Transactional
@@ -189,7 +189,7 @@ public class ChatService {
                 .senderNickname(m.getSender().getNickname())
                 .content(m.getContent())
                 .type(m.getType())
-                .createdAt(m.getCreatedAt().atZone(ZoneOffset.UTC).toInstant().toEpochMilli())
+                .createdAt(m.getCreatedAt().toEpochMilli())
                 .build();
     }
 }
