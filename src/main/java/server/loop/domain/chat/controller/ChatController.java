@@ -16,19 +16,29 @@ import server.loop.domain.chat.service.ChatService;
 
 import java.util.List;
 
+import server.loop.global.security.CustomUserDetailsService;
+
+import java.security.Principal;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/chat")
 public class ChatController {
 
     private final ChatService chatService;
+    private final CustomUserDetailsService userDetailsService;
 
     // ===== STOMP =====
     // 클라 전송: /app/chat.send
     // spring-security-messaging 사용 시 @AuthenticationPrincipal 주입 가능
     @MessageMapping("/chat.send")
     public void send(@Valid ChatMessageSendRequest req,
-                     @AuthenticationPrincipal UserDetails userDetails) {
+                     Principal principal) {
+        if (principal == null) {
+            // Should not happen if interceptor is working
+            return;
+        }
+        UserDetails userDetails = userDetailsService.loadUserByUsername(principal.getName());
         chatService.sendMessage(userDetails, req);
     }
 
