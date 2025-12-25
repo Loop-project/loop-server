@@ -53,7 +53,7 @@ public class MyPageService {
 
     // 공통 로직: Slice<Post>를 SliceResponseDto<MyPagePostResponseDto>로 변환
     private SliceResponseDto<MyPagePostResponseDto> createPostSliceResponse(Slice<Post> postSlice) {
-        Slice<MyPagePostResponseDto> responseDtoSlice = postSlice.map(MyPagePostResponseDto::new);
+        Slice<MyPagePostResponseDto> responseDtoSlice = postSlice.map(MyPagePostResponseDto::from);
         return new SliceResponseDto<>(responseDtoSlice);
     }
 }
