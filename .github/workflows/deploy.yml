@@ -29,7 +29,6 @@ jobs:
       - name: Build JAR
         run: ./gradlew clean bootJar
 
-
       - name: Log in to GHCR
         uses: docker/login-action@v2
         with:
@@ -50,8 +49,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/loop-server:latest
-            ghcr.io/${{ github.repository_owner }}/loop-server:${{ steps.current-time.outputs.formattedTime }}
+            ghcr.io/loop-project/loop-server:latest
+            ghcr.io/loop-project/loop-server:${{ steps.current-time.outputs.formattedTime }}
 
       - name: Deploy to Oracle Cloud
         uses: appleboy/ssh-action@v1.0.3
@@ -62,7 +61,7 @@ jobs:
           script: |
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            docker pull ghcr.io/${{ github.repository_owner }}/loop-server:latest
+            docker pull ghcr.io/loop-project/loop-server:latest
             
             docker stop loop-server || true
             docker rm loop-server || true
@@ -79,6 +78,4 @@ jobs:
               -e AWS_REGION='${{ secrets.AWS_REGION }}' \
               -e AWS_S3_BUCKET='${{ secrets.AWS_S3_BUCKET }}' \
               -e JWT_SECRET='${{ secrets.JWT_SECRET }}' \
-              -e JWT_ACCESS_TOKEN_VALIDITY='${{ secrets.JWT_ACCESS_TOKEN_VALIDITY }}' \
-              -e JWT_REFRESH_TOKEN_VALIDITY='${{ secrets.JWT_REFRESH_TOKEN_VALIDITY }}' \
-              ghcr.io/${{ github.repository_owner }}/loop-server:latest
+              ghcr.io/loop-project/loop-server:latest
