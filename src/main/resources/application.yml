@@ -8,6 +8,23 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      adjust-dates-to-context-time-zone: false
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -35,8 +52,8 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET}
-  access-token-validity-in-seconds: ${JWT_ACCESS_TOKEN_VALIDITY}
-  refresh-token-validity-in-seconds: ${JWT_REFRESH_TOKEN_VALIDITY}
+  access-token-validity-in-seconds: 1800
+  refresh-token-validity-in-seconds: 604800
 
 springdoc:
   api-docs:
