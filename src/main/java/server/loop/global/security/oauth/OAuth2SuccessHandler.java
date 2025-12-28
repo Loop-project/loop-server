@@ -51,15 +51,15 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         // 3. 프론트엔드로 리다이렉트
         //로컬용
-        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:5173/oauth/callback")
-                .queryParam("accessToken", accessToken)
-                .queryParam("refreshToken", refreshToken)
-                .build().toUriString();
-
-//        String targetUrl = UriComponentsBuilder.fromUriString("https://loop-front-eta.vercel.app/oauth/callback")
+//        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:5173/oauth/callback")
 //                .queryParam("accessToken", accessToken)
 //                .queryParam("refreshToken", refreshToken)
 //                .build().toUriString();
+
+        String targetUrl = UriComponentsBuilder.fromUriString("https://loop-front-eta.vercel.app/oauth/callback")
+                .queryParam("accessToken", accessToken)
+                .queryParam("refreshToken", refreshToken)
+                .build().toUriString();
 
         log.info("소셜 로그인 성공! 리다이렉트: {}", targetUrl);
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
