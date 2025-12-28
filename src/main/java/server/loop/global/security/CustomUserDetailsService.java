@@ -22,9 +22,11 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     private UserDetails createUserDetails(User user) {
+        String password = user.getPassword() != null ? user.getPassword() : ""; //google 로그인 때문에 넣음
+
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
-                .password(user.getPassword())
+                .password(password)
                 .roles("USER")
                 .build();
     }
