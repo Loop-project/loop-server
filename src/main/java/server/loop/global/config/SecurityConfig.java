@@ -7,7 +7,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +19,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import server.loop.global.security.CustomUserDetailsService;
 import server.loop.global.security.JwtAuthenticationFilter;
 import server.loop.global.security.JwtTokenProvider;
+import server.loop.global.security.oauth.CustomOAuth2UserService;
+import server.loop.global.security.oauth.OAuth2SuccessHandler;
 
 import java.util.List;
 
@@ -30,6 +32,8 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -56,16 +60,20 @@ public class SecurityConfig {
         return source;
     }
 
-
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable) // 문법 최신화
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .formLogin(AbstractHttpConfigurer::disable) // 폼 로그인 비활성화
+                .httpBasic(AbstractHttpConfigurer::disable) // HTTP Basic 비활성화
+
                 .authorizeHttpRequests(auth -> auth
                         // ------------------ 공개(Public) API ------------------
+                        // OAuth2 경로 허용
+                        .requestMatchers("/oauth2/**", "/login/**").permitAll()
+
                         //광고 표기
                         .requestMatchers(HttpMethod.GET, "/api/ads").permitAll()
                         // OPTIONS 요청은 모든 경로에 대해 허용 (CORS preflight)
@@ -132,11 +140,18 @@ public class SecurityConfig {
                         // 나머지 모든 요청은 인증된 사용자만 접근 가능
                         .anyRequest().authenticated()
                 )
+
+                // OAuth2 로그인 설정 추가
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService) // 구글 정보 처리 서비스
+                        )
+                        .successHandler(oAuth2SuccessHandler)     // JWT 발급 핸들러
+                )
+
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService),
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
-
 }
