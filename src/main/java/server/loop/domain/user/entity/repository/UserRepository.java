@@ -11,4 +11,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     Optional<User> findByNickname(String nickname);
     boolean existsByNickname(String nickname);// 유저 닉네임 중복 확인
+
+    Optional<User> findByEmailAndDeletedAtIsNull(String email);
+    Optional<User> findByNicknameAndDeletedAtIsNull(String nickname);
+
+    boolean existsByEmailAndDeletedAtIsNull(String email);
+    boolean existsByNicknameAndDeletedAtIsNull(String nickname);
 }

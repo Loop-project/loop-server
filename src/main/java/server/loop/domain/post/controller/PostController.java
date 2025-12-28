@@ -4,6 +4,7 @@ import io.micrometer.common.lang.Nullable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +31,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/posts")
+@Slf4j
 public class PostController {
 
     private final PostService postService;
@@ -42,6 +44,7 @@ public class PostController {
             @RequestPart(value = "images", required = false) List<MultipartFile> images, // 3. 파일 부분
             @AuthenticationPrincipal UserDetails userDetails) throws IOException {
 
+        log.info("[CREATE_POST] dto={}, category={}, principal={}", requestDto, requestDto.getCategory(), userDetails.getUsername());
         Long postId = postService.createPost(requestDto, images, userDetails.getUsername());
         return ResponseEntity.ok("게시글이 성공적으로 생성되었습니다. ID: " + postId);
     }
@@ -53,6 +56,7 @@ public class PostController {
             @PathVariable Long postId,
             @AuthenticationPrincipal @Nullable User currentUser // 로그인 안 해도 null
     ) {
+        log.info("[GET_POST] postId={}, currentUser={}", postId, currentUser != null ? currentUser.getNickname() : "null");
         PostDetailResponseDto response = postService.getPost(postId, currentUser);
         return ResponseEntity.ok(response);
     }
@@ -67,6 +71,7 @@ public class PostController {
             @RequestPart(value = "images", required = false) List<MultipartFile> images,
             @AuthenticationPrincipal UserDetails userDetails
     ) throws AccessDeniedException, IOException {
+        log.info("[UPDATE_POST] postId={}, principal={}", postId, userDetails.getUsername());
         postService.updatePost(postId, requestDto, images, userDetails.getUsername());
         return ResponseEntity.ok("게시글이 성공적으로 수정되었습니다. ID: " + postId);
     }
@@ -77,6 +82,7 @@ public class PostController {
     @DeleteMapping("/{postId}")
     public ResponseEntity<Map<String, Object>> deletePost(@PathVariable Long postId,
                                                           @AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
+        log.info("[DELETE_POST] postId={}, principal={}", postId, userDetails.getUsername());
         postService.deletePost(postId, userDetails.getUsername());
 
         Map<String, Object> response = new HashMap<>();
@@ -91,10 +97,20 @@ public class PostController {
     @GetMapping
     public ResponseEntity<SliceResponseDto<PostResponseDto>> getPostsSlice(
             @RequestParam(required = false) Category category,
-            // 기본 20개씩, 최신순으로 정렬
-            @PageableDefault(size = 20) Pageable pageable) {
-
+            @PageableDefault(size = 10) Pageable pageable) {
+        log.info("[GET_POSTS_SLICE] category={}, pageable={}", category, pageable);
         SliceResponseDto<PostResponseDto> result = postService.getPostsSlice(category, pageable);
         return ResponseEntity.ok(result);
     }
+
+    @Operation(summary = "게시글 검색", description = "카테고리와 상관없이 제목/본문에서 키워드로 최신순 검색합니다. q가 비어있으면 전체 최신순 목록과 동일합니다.")
+    @GetMapping("/search")
+    public ResponseEntity<SliceResponseDto<PostResponseDto>> searchPosts(
+            @RequestParam(required = false, defaultValue = "") String q,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        log.info("[SEARCH_POSTS] q={}, pageable={}", q, pageable);
+        return ResponseEntity.ok(postService.searchPosts(q, pageable));
+    }
+
 }

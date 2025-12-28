@@ -1,81 +1,81 @@
-name: CI/CD to EC2
+name: CI/CD to Oracle Cloud
 
 on:
   push:
     branches:
       - main
+
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
 
-    - name: Set up JDK
-      uses: actions/setup-java@v3
-      with:
-        java-version: '21'
-        distribution: 'temurin'
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
-    - name: Build JAR
-      run: ./gradlew clean bootJar
+      - name: Build JAR
+        run: ./gradlew clean bootJar
 
-    # --- ⬇️ 수정된 부분 시작 ⬇️ ---
+      - name: Log in to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Get current time
-      uses: 1466587594/get-current-time@v2
-      id: current-time
-      with:
-        format: YYYYMMDD-HHmmss
-        utcOffset: "+09:00"
+      - name: Get current time
+        uses: 1466587594/get-current-time@v2
+        id: current-time
+        with:
+          format: YYYYMMDD-HHmmss
+          utcOffset: "+09:00"
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/loop-project/loop-server:latest
+            ghcr.io/loop-project/loop-server:${{ steps.current-time.outputs.formattedTime }}
 
-    - name: Log in to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-
-    - name: Build, tag, and push image to Amazon ECR
-      id: build-image
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-        IMAGE_TAG: ${{ steps.current-time.outputs.formattedTime }}
-      run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-    - name: Deploy to EC2
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
-          docker pull ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ steps.current-time.outputs.formattedTime }}
-          docker stop loop-server || true
-          docker rm loop-server || true
-          docker run -d -p 8080:8080 --name loop-server \
-            -e DB_URL='${{ secrets.DB_URL }}' \
-            -e DB_USERNAME='${{ secrets.DB_USERNAME }}' \
-            -e DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
-            -e AWS_ACCESS_KEY_ID='${{ secrets.AWS_ACCESS_KEY_ID }}' \
-            -e AWS_SECRET_ACCESS_KEY='${{ secrets.AWS_SECRET_ACCESS_KEY }}' \
-            -e AWS_REGION='${{ secrets.AWS_REGION }}' \
-            -e AWS_S3_BUCKET='${{ secrets.AWS_S3_BUCKET }}' \
-            -e JWT_SECRET='${{ secrets.JWT_SECRET }}' \
-            -e JWT_ACCESS_TOKEN_VALIDITY='${{ secrets.JWT_ACCESS_TOKEN_VALIDITY }}' \
-            -e JWT_REFRESH_TOKEN_VALIDITY='${{ secrets.JWT_REFRESH_TOKEN_VALIDITY }}' \
-            ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ steps.current-time.outputs.formattedTime }}
+      - name: Deploy to Oracle Cloud
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: opc
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+          script: |
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-    # --- ⬆️ 수정된 부분 끝 ⬆️ ---
+            docker pull ghcr.io/loop-project/loop-server:latest
+            
+            docker stop loop-server || true
+            docker rm loop-server || true
+            
+            docker run -d -p 8080:8080 --name loop-server \
+              --network loop-network \
+              --restart unless-stopped \
+              -e JAVA_OPTS="-Xmx400m" \
+              -e DB_URL='jdbc:mysql://mysql-container:3306/mydb?useSSL=false&allowPublicKeyRetrieval=true' \
+              -e DB_USERNAME='root' \
+              -e DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
+              -e AWS_ACCESS_KEY_ID='${{ secrets.AWS_ACCESS_KEY_ID }}' \
+              -e AWS_SECRET_ACCESS_KEY='${{ secrets.AWS_SECRET_ACCESS_KEY }}' \
+              -e AWS_REGION='${{ secrets.AWS_REGION }}' \
+              -e AWS_S3_BUCKET='${{ secrets.AWS_S3_BUCKET }}' \
+              -e JWT_SECRET='${{ secrets.JWT_SECRET }}' \
+              ghcr.io/loop-project/loop-server:latest

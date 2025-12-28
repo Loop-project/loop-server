@@ -59,27 +59,25 @@ public class UserService {
 
     //로그인
     public TokenDto login(UserLoginDto loginDto) {
-        User user = userRepository.findByEmail(loginDto.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 이메일입니다."));
+        User user = userRepository.findByEmailAndDeletedAtIsNull(loginDto.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다."));
 
         if (!passwordEncoder.matches(loginDto.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("잘못된 비밀번호입니다.");
+            throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
         }
 
-        // 1. Access Token과 Refresh Token 생성
         String accessToken = jwtTokenProvider.createAccessToken(user.getEmail());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail());
 
-        // 2. Refresh Token을 DB에 저장 (이미 있으면 업데이트, 없으면 새로 생성)
         refreshTokenRepository.findByUser(user)
                 .ifPresentOrElse(
                         (token) -> token.updateToken(refreshToken),
                         () -> refreshTokenRepository.save(new RefreshToken(user, refreshToken))
                 );
 
-        // 3. 두 토큰을 DTO에 담아 반환
         return new TokenDto(accessToken, refreshToken);
     }
+
 
     //회원 조회
     @Transactional(readOnly = true) // 조회만 하므로 readOnly = true 추가
@@ -115,13 +113,10 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
-        // Refresh Token 삭제
-        refreshTokenRepository.findByUser(user)
-                .ifPresent(refreshTokenRepository::delete);
+        refreshTokenRepository.deleteByUserId(user.getId());
 
-        // User Soft Delete
-        user.withdraw();
-        userRepository.save(user);
+        user.withdraw();                  // 필드 변경
+        userRepository.saveAndFlush(user); // 강제 flush로 DB까지 반영 확인
     }
 
     //닉네임 변경

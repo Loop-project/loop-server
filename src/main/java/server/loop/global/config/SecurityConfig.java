@@ -70,6 +70,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/ads").permitAll()
                         // OPTIONS 요청은 모든 경로에 대해 허용 (CORS preflight)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/ws/**", "/api/ws/**").permitAll()
+
                         // 스웨거 문서 및 인증 관련 엔드포인트 허용
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users/signup", "/api/users/login").permitAll()
@@ -88,6 +90,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/terms").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/users/check-nickname").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/chat/rooms/public").permitAll()
+
                         // ------------------ 인증(Authenticated) API ------------------
                         // 신고(Report) 명시 추가
                         .requestMatchers(HttpMethod.POST, "/api/posts/*/report").authenticated()
@@ -96,6 +100,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/posts/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/posts/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/posts/search/**").authenticated()
 
                         // 댓글 관련
                         .requestMatchers(HttpMethod.POST, "/api/comments").authenticated()
@@ -115,8 +120,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/users/profile/nickname").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/users/password").authenticated()
 
+                        // 채팅 관련
+                        .requestMatchers("/api/chat/**").authenticated()
+
                         //알림서비스
-                        .requestMatchers("/ws/**", "/api/ws/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/notifications").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/notifications/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/notifications/unread-count").authenticated()

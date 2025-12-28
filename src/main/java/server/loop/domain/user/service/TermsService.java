@@ -16,7 +16,7 @@ public class TermsService {
 
     public TermsResponseDto getLatestTerms(TermsType type) {
         return termsRepository.findFirstByTypeOrderByVersionDesc(type)
-                .map(TermsResponseDto::new)
+                .map(TermsResponseDto::from)
                 .orElseThrow(() -> new IllegalArgumentException(type + " 타입의 약관을 찾을 수 없습니다."));
 
     }

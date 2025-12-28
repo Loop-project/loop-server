@@ -91,38 +91,41 @@ public class PostService {
     }
 
     // 게시글 수정
-    public Long updatePost(Long postId, PostUpdateRequestDto requestDto, List<MultipartFile> images, String email)
-            throws AccessDeniedException, IOException {
+    public Long updatePost(Long postId, PostUpdateRequestDto requestDto,
+                           List<MultipartFile> images, String email)
+            throws IOException {
 
+        // 1) 토큰 이메일로 현재 사용자 조회
+        User editor = userRepository.findByEmail(email.trim())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        // 2) 소유권 먼저, 가볍게 체크 (DB 한 번)
+        if (!postRepository.existsByIdAndAuthorId(postId, editor.getId())) {
+            throw new org.springframework.security.access.AccessDeniedException("게시글을 수정할 권한이 없습니다.");
+        }
+
+        // 3) 엔티티 로딩 후 수정
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
 
-        // 작성자 본인 확인
-        if (!post.getAuthor().getEmail().equals(email)) {
-            throw new AccessDeniedException("게시글을 수정할 권한이 없습니다.");
-        }
-
-        // 게시글 내용 수정
         post.update(requestDto.getCategory(), requestDto.getTitle(), requestDto.getContent());
 
-        // === 이미지 처리 ===
         if (images != null && !images.isEmpty()) {
-            // 1) 기존 이미지 S3에서 삭제
+            // 기존 이미지 S3 삭제
             post.getImages().forEach(img -> s3UploadService.deleteImageFromS3(img.getImageUrl()));
-            // 2) DB에서 기존 이미지 레코드 제거
+            // 관계 끊고 리스트 비우기 (orphanRemoval=true 가정)
+            post.getImages().forEach(img -> img.setPost(null));
             post.getImages().clear();
 
-            // 3) 새 이미지 업로드
+            // 새 이미지 업로드
             for (MultipartFile image : images) {
-                String imageUrl = s3UploadService.uploadFile(image, "post-images");
-                PostImage postImage = new PostImage(imageUrl);
-                post.addImage(postImage);
+                String url = s3UploadService.uploadFile(image, "post-images");
+                post.addImage(new PostImage(url));
             }
         }
-        // images가 null 또는 비어있으면 → 기존 이미지 유지
-
         return postId;
     }
+
 
 
     // 게시글 삭제
@@ -141,7 +144,19 @@ public class PostService {
             throw new AccessDeniedException("게시글을 삭제할 권한이 없습니다.");
         }
 
-        // 4. 게시글 삭제 로직 (여기서 외래 키에 따른 이미지 삭제 등)
-        postRepository.delete(post);
+        post.softDelete();
+    }
+
+    @Transactional(readOnly = true)
+    public SliceResponseDto<PostResponseDto> searchPosts(String q, Pageable pageable) {
+        Slice<Post> postSlice;
+        if (q == null || q.trim().isEmpty()) {
+            // 키워드 없으면 전체 최신순과 동일하게
+            postSlice = postRepository.findAllActivePosts(pageable);
+        } else {
+            postSlice = postRepository.searchActivePosts(q.trim(), pageable);
+        }
+        Slice<PostResponseDto> dtoSlice = postSlice.map(PostResponseDto::new);
+        return new SliceResponseDto<>(dtoSlice);
     }
 }
