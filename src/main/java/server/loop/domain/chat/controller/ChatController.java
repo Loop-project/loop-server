@@ -74,13 +74,6 @@ public class ChatController {
         return ResponseEntity.ok(chatService.listPublicRooms(userDetails, page, size));
     }
 
-    // 내가 속한 방: 인증 필요
-    @GetMapping("/rooms/me")
-    public ResponseEntity<List<ChatRoomResponse>> myRooms(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(chatService.listMyRooms(userDetails));
-    }
-
     // 메시지 목록 (무한 스크롤): 현재 정책상 멤버만 조회 가능
     @GetMapping("/rooms/{roomId}/messages")
     public ResponseEntity<List<ChatMessageResponse>> messages(
