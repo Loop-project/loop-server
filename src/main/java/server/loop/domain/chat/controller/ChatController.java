@@ -3,6 +3,7 @@ package server.loop.domain.chat.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -100,5 +101,11 @@ public class ChatController {
     public ResponseEntity<ChatRoomResponse> startChat(@PathVariable Long postId,
                                                       @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(chatService.startPrivateChat(userDetails, postId));
+    }
+    @GetMapping({"/rooms/me", "/rooms/my"})
+    public ResponseEntity<Page<ChatRoomResponse>> myRooms(
+            @AuthenticationPrincipal UserDetails userDetails,
+            Pageable pageable) { // Pageable을 자동으로 바인딩 받음
+        return ResponseEntity.ok(chatService.listMyRooms(userDetails, pageable));
     }
 }
