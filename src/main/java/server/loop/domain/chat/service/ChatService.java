@@ -18,10 +18,12 @@ import server.loop.domain.chat.entity.ChatRoomMember;
 import server.loop.domain.chat.entity.repository.ChatMessageRepository;
 import server.loop.domain.chat.entity.repository.ChatRoomMemberRepository;
 import server.loop.domain.chat.entity.repository.ChatRoomRepository;
+import server.loop.domain.post.entity.Category;
+import server.loop.domain.post.entity.Post;
+import server.loop.domain.post.entity.repository.PostRepository;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
 
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,6 +36,7 @@ public class ChatService {
     private final ChatMessageRepository messageRepository;
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final PostRepository postRepository;
 
     // ==== Room ====
 
@@ -78,8 +81,6 @@ public class ChatService {
 
         memberRepository.findByRoomAndUser(room, user)
                 .ifPresent(memberRepository::delete);
-
-        // 정책적으로 방장 처리/방 삭제 자동화가 필요하면 여기에 추가
     }
 
     @Transactional(readOnly = true)
@@ -108,6 +109,49 @@ public class ChatService {
         return toRoomResponse(room, me, joined);
     }
 
+    @Transactional
+    public ChatRoomResponse startPrivateChat(UserDetails userDetails, Long postId) {
+        User me = currentUser(userDetails);
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+
+        if (post.getCategory() != Category.USED) {
+            throw new IllegalStateException("중고 거래 게시글에서만 1:1 채팅이 가능합니다.");
+        }
+
+        User seller = post.getAuthor();
+
+        if (me.getId().equals(seller.getId())) {
+            throw new IllegalArgumentException("자신의 게시글과는 채팅할 수 없습니다.");
+        }
+
+        return memberRepository.findByRoom_PostAndUser(post, me)
+                .map(member -> toRoomResponse(member.getRoom(), me, true))
+                .orElseGet(() -> createUsedChatRoom(me, seller, post));
+    }
+
+    private ChatRoomResponse createUsedChatRoom(User buyer, User seller, Post post) {
+        String id = UUID.randomUUID().toString();
+        ChatRoom room = ChatRoom.builder()
+                .id(id)
+                .title(post.getTitle())
+                .visibility("PRIVATE")
+                .owner(buyer)
+                .post(post)
+                .build();
+        
+        ChatRoom savedRoom = chatRoomRepository.save(room);
+
+        memberRepository.save(ChatRoomMember.builder()
+                .room(savedRoom).user(buyer).role("OWNER").build());
+        
+        memberRepository.save(ChatRoomMember.builder()
+                .room(savedRoom).user(seller).role("MEMBER").build());
+
+        return toRoomResponse(savedRoom, buyer, true);
+    }
+
     // ==== Message ====
 
     @Transactional
@@ -115,7 +159,6 @@ public class ChatService {
         User sender = currentUser(userDetails);
         ChatRoom room = getRoomOrThrow(req.getRoomId());
 
-        // 멤버십 검증(공개방이라도 "보내기"는 가입자만 허용)
         if (!memberRepository.existsByRoomAndUser(room, sender)) {
             throw new IllegalStateException("해당 채팅방의 멤버가 아닙니다.");
         }
@@ -128,7 +171,6 @@ public class ChatService {
                 .build());
 
         ChatMessageResponse payload = toMessageResponse(saved);
-        // 공개방은 토픽 브로드캐스트
         messagingTemplate.convertAndSend("/topic/chat." + room.getId(), payload);
         return payload;
     }
@@ -138,7 +180,6 @@ public class ChatService {
         User me = currentUser(userDetails);
         ChatRoom room = getRoomOrThrow(roomId);
 
-        // 읽기 권한: 현재 정책은 멤버만 허용 (공개 읽기 원하면 여기 완화)
         if (!memberRepository.existsByRoomAndUser(room, me)) {
             throw new IllegalStateException("해당 채팅방의 멤버가 아닙니다.");
         }
@@ -157,7 +198,7 @@ public class ChatService {
         if (userDetails == null || userDetails.getUsername() == null) {
             throw new IllegalStateException("인증 정보가 없습니다.");
         }
-        String email = userDetails.getUsername(); // CustomUserDetailsService에서 username=email
+        String email = userDetails.getUsername(); 
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다. email=" + email));
     }
@@ -186,6 +227,8 @@ public class ChatService {
                         .build())
                 .toList();
 
+        Long postId = r.getPost() != null ? r.getPost().getId() : null;
+
         return ChatRoomResponse.builder()
                 .roomId(r.getId())
                 .title(r.getTitle())
@@ -194,6 +237,7 @@ public class ChatService {
                 .memberCount(memberCount)
                 .createdAt(r.getCreatedAt().toEpochMilli())
                 .joined(joined)
+                .postId(postId)
                 .members(members)
                 .build();
     }

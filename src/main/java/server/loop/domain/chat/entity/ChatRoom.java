@@ -24,6 +24,10 @@ public class ChatRoom {
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id")
+    private server.loop.domain.post.entity.Post post;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant createdAt;

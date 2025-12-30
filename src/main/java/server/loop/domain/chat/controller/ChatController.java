@@ -95,4 +95,10 @@ public class ChatController {
                                                     @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(chatService.getRoom(userDetails, roomId));
     }
+
+    @PostMapping("/start/{postId}")
+    public ResponseEntity<ChatRoomResponse> startChat(@PathVariable Long postId,
+                                                      @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(chatService.startPrivateChat(userDetails, postId));
+    }
 }
