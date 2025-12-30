@@ -1,6 +1,8 @@
 package server.loop.domain.chat.entity.repository;
 
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,4 +21,5 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, 
     long countByRoom(ChatRoom room);
     List<ChatRoomMember> findByUser(User user);
     List<ChatRoomMember> findByRoom(ChatRoom room);
+    Page<ChatRoomMember> findByUser(User user, Pageable pageable);
 }
