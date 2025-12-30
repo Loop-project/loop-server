@@ -3,6 +3,7 @@ package server.loop.domain.chat.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -96,7 +97,10 @@ public class ChatService {
     @Transactional(readOnly = true)
     public List<ChatRoomResponse> listMyRooms(UserDetails userDetails) {
         User me = currentUser(userDetails);
-        return memberRepository.findByUser(me).stream()
+        List<ChatRoomMember> memberships = memberRepository.findByUser(me);
+        System.out.println("DEBUG: User " + me.getId() + " (" + me.getNickname() + ") has " + memberships.size() + " memberships.");
+        
+        return memberships.stream()
                 .map(m -> toRoomResponse(m.getRoom(), me, true))
                 .toList();
     }
@@ -190,6 +194,17 @@ public class ChatService {
                 : messageRepository.findByRoom_IdAndIdLessThanOrderByIdDesc(roomId, beforeId, pr);
 
         return list.stream().map(this::toMessageResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ChatRoomResponse> listMyRooms(UserDetails userDetails, Pageable pageable) {
+        User me = currentUser(userDetails);
+
+        // 페이징된 멤버십 목록 가져오기
+        Page<ChatRoomMember> pages = memberRepository.findByUser(me, pageable);
+
+        // Page<Member> -> Page<Response> 로 변환
+        return pages.map(m -> toRoomResponse(m.getRoom(), me, true));
     }
 
     // ==== Helpers ====
