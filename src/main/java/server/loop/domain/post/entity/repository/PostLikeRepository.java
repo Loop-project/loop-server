@@ -29,7 +29,7 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
     SELECT p.* 
     FROM post p
     LEFT JOIN post_like l ON p.id = l.post_id
-    WHERE p.created_at BETWEEN :start AND :end
+    WHERE p.created_at BETWEEN :start AND :end AND p.is_deleted = false
     GROUP BY p.id
     ORDER BY COUNT(l.id) DESC, p.created_at DESC
     LIMIT 5
