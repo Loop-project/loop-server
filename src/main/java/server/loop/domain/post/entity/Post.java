@@ -28,7 +28,7 @@ public class Post extends BaseEntity {
     @Column(name = "id", updatable = false)
     private Long id; // 고유 ID
 
-    @ManyToOne // 게시글(Many)과 작성자(One)의 관계
+    @ManyToOne(fetch = FetchType.LAZY) // 게시글(Many)과 작성자(One)의 관계
     @JoinColumn(name = "user_id") // 외래키 이름 지정
     private User author; // 작성자 (User Entity 참조)
 
