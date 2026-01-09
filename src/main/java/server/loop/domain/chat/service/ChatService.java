@@ -189,9 +189,7 @@ public class ChatService {
         }
 
         PageRequest pr = PageRequest.of(0, Math.min(size, 100));
-        var list = (beforeId == null)
-                ? messageRepository.findByRoom_IdOrderByIdDesc(roomId, pr)
-                : messageRepository.findByRoom_IdAndIdLessThanOrderByIdDesc(roomId, beforeId, pr);
+        List<ChatMessage> list = messageRepository.findMessages(roomId, beforeId, pr);
 
         return list.stream().map(this::toMessageResponse).toList();
     }
