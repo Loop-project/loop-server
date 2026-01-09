@@ -68,7 +68,7 @@ public class LikeService {
 
         System.out.println("쿼리 범위: " + start + " ~ " + end);
 
-        List<Post> posts = postLikeRepository.findTopPostsCreatedInPeriodOrderByLikesNative(start, end);
+        List<Post> posts = postLikeRepository.findTopPostsCreatedInPeriodOrderByLikes(start, end);
 
         return posts.stream()
                 .map(TopLikedPostResponseDto::fromEntity)
