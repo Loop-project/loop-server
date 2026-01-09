@@ -22,7 +22,7 @@ public class AdService {
 
     public List<Ad> getActiveAds() {
         LocalDate today = LocalDate.now();
-        return adRepository.findByActiveTrueAndStartDateLessThanEqualAndEndDateGreaterThanEqual(today, today);
+        return adRepository.findActiveAds(today);
     }
     private final S3UploadService s3Uploader;
 
