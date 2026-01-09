@@ -77,9 +77,7 @@ public class CommentService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
 
-        // ⭐ 수정: 모든 댓글을 조회하도록 변경 (삭제된 댓글 포함)
-        // findByPostOrderByCreatedAtAsc 메서드를 CommentRepository에 추가해야 함
-        return commentRepository.findByPostOrderByCreatedAtAsc(post).stream()
+        return commentRepository.findAllByPost(post).stream()
                 .filter(comment -> comment.getParent() == null)
                 .map(CommentResponseDto::new)
                 .collect(Collectors.toList());
