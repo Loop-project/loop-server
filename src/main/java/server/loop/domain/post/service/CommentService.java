@@ -1,6 +1,7 @@
 package server.loop.domain.post.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import server.loop.domain.user.entity.repository.UserRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -30,6 +32,7 @@ public class CommentService {
 
     // 댓글/대댓글 생성
     public Long createComment(CommentCreateRequestDto requestDto, String email) {
+        log.info("[CreateComment] post={}, user={}", requestDto.getPostId(), email);
         User author = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
         Post post = postRepository.findById(requestDto.getPostId())
@@ -50,7 +53,7 @@ public class CommentService {
 
         commentRepository.save(comment);
 
-        // ✅ 알림 로직 시작
+        // 알림 로직 시작
         User postAuthor = post.getAuthor();
         String postTitle = post.getTitle(); // 게시글 제목
 
@@ -65,7 +68,7 @@ public class CommentService {
         } else if (!postAuthor.getId().equals(author.getId())) {
             notificationService.send(author, postAuthor, post, comment, postTitle, "Your post has a new comment.");
         }
-        // ✅ 알림 로직 끝
+        // 알림 로직 끝
 
         return comment.getId();
     }
@@ -84,6 +87,7 @@ public class CommentService {
     }
     //댓글 수정
     public Long updateComment(Long commentId, CommentUpdateRequestDto requestDto, String email) throws AccessDeniedException {
+        log.info("[UpdateComment] commentId={}, user={}", commentId, email);
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
         if (!comment.getAuthor().getEmail().equals(email)) {
@@ -96,6 +100,7 @@ public class CommentService {
 
     // 댓글 삭제
     public Long deleteComment(Long commentId, String email) throws AccessDeniedException {
+        log.info("[DeleteComment] commentId={}, user={}", commentId, email);
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
         if (!comment.getAuthor().getEmail().equals(email)) {

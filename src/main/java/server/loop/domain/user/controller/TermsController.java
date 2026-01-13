@@ -3,6 +3,7 @@ package server.loop.domain.user.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,6 +13,7 @@ import server.loop.domain.user.dto.res.TermsResponseDto;
 import server.loop.domain.user.entity.TermsType;
 import server.loop.domain.user.service.TermsService;
 
+@Slf4j
 @Tag(name = "Terms", description = "약관 관리 API")
 @RestController
 @RequiredArgsConstructor
@@ -23,6 +25,7 @@ public class TermsController {
     @Operation(summary = "최신 약관 조회", description = "특정 타입의 가장 최신 버전 약관을 조회합니다.")
     @GetMapping
     public ResponseEntity<TermsResponseDto> getLatestTerms(@RequestParam TermsType type) {
+        log.info("[GetLatestTerms] type={}", type);
         TermsResponseDto response = termsService.getLatestTerms(type);
         return ResponseEntity.ok(response);
     }

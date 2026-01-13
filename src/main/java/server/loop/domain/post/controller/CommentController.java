@@ -3,6 +3,7 @@ package server.loop.domain.post.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,6 +16,7 @@ import server.loop.domain.post.service.CommentService;
 
 import java.util.List;
 
+@Slf4j
 @Tag(name = "Comment", description = "댓글/대댓글 관리 API")
 @RestController
 @RequiredArgsConstructor
@@ -27,6 +29,7 @@ public class CommentController {
     @PostMapping(value = "/comments", produces = "application/json") // 수정
     public ResponseEntity<List<CommentResponseDto>> createComment(@RequestBody CommentCreateRequestDto requestDto,
                                                                   @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("[CreateComment] post={}, user={}", requestDto.getPostId(), userDetails.getUsername());
         commentService.createComment(requestDto, userDetails.getUsername());
         List<CommentResponseDto> updatedComments = commentService.getCommentsByPost(requestDto.getPostId());
         return ResponseEntity.ok(updatedComments);
@@ -45,6 +48,7 @@ public class CommentController {
     public ResponseEntity<List<CommentResponseDto>> updateComment(@PathVariable Long commentId,
                                                                   @RequestBody CommentUpdateRequestDto requestDto,
                                                                   @AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
+        log.info("[UpdateComment] commentId={}, user={}", commentId, userDetails.getUsername());
         Long postId = commentService.updateComment(commentId, requestDto, userDetails.getUsername());
         List<CommentResponseDto> updatedComments = commentService.getCommentsByPost(postId);
         return ResponseEntity.ok(updatedComments);
@@ -54,6 +58,7 @@ public class CommentController {
     @DeleteMapping(value = "/comments/{commentId}", produces = "application/json") // 수정
     public ResponseEntity<List<CommentResponseDto>> deleteComment(@PathVariable Long commentId,
                                                                   @AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
+        log.info("[DeleteComment] commentId={}, user={}", commentId, userDetails.getUsername());
         Long postId = commentService.deleteComment(commentId, userDetails.getUsername());
         List<CommentResponseDto> updatedComments = commentService.getCommentsByPost(postId);
         return ResponseEntity.ok(updatedComments);

@@ -2,6 +2,7 @@ package server.loop.domain.ad.controller;
 
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/ads")
 @RequiredArgsConstructor
@@ -33,6 +35,7 @@ public class AdController {
             @RequestPart("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestPart("active") boolean active
     ) throws IOException {
+        log.info("[CreateAd] linkUrl={}, start={}, end={}, active={}", linkUrl, startDate, endDate, active);
         Ad savedAd = adService.createAd(image, linkUrl, startDate, endDate, active);
         return ResponseEntity.ok(savedAd);
     }

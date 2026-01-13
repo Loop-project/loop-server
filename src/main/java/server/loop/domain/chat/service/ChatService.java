@@ -1,6 +1,7 @@
 package server.loop.domain.chat.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,7 @@ import server.loop.domain.user.entity.repository.UserRepository;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChatService {
@@ -45,6 +47,7 @@ public class ChatService {
     public ChatRoomResponse createRoom(UserDetails userDetails, ChatRoomCreateRequest req) {
         User owner = currentUser(userDetails);
         String id = UUID.randomUUID().toString();
+        log.info("[CreateChatRoom] title={}, owner={}", req.getTitle(), owner.getEmail());
 
         ChatRoom room = ChatRoom.builder()
                 .id(id)
@@ -65,6 +68,7 @@ public class ChatService {
     public void joinPublicRoom(UserDetails userDetails, String roomId) {
         User user = currentUser(userDetails);
         ChatRoom room = getRoomOrThrow(roomId);
+        log.info("[JoinChatRoom] roomId={}, user={}", roomId, user.getEmail());
 
         if (!"PUBLIC".equals(room.getVisibility())) {
             throw new IllegalStateException("공개방이 아닙니다. 초대/승인이 필요합니다.");
@@ -79,6 +83,7 @@ public class ChatService {
     public void leaveRoom(UserDetails userDetails, String roomId) {
         User user = currentUser(userDetails);
         ChatRoom room = getRoomOrThrow(roomId);
+        log.info("[LeaveChatRoom] roomId={}, user={}", roomId, user.getEmail());
 
         memberRepository.findByRoomAndUser(room, user)
                 .ifPresent(memberRepository::delete);
@@ -98,7 +103,7 @@ public class ChatService {
     public List<ChatRoomResponse> listMyRooms(UserDetails userDetails) {
         User me = currentUser(userDetails);
         List<ChatRoomMember> memberships = memberRepository.findByUser(me);
-        System.out.println("DEBUG: User " + me.getId() + " (" + me.getNickname() + ") has " + memberships.size() + " memberships.");
+        log.debug("DEBUG: User {} ({}) has {} memberships.", me.getId(), me.getNickname(), memberships.size());
         
         return memberships.stream()
                 .map(m -> toRoomResponse(m.getRoom(), me, true))
@@ -125,6 +130,7 @@ public class ChatService {
         }
 
         User seller = post.getAuthor();
+        log.info("[StartPrivateChat] buyer={}, seller={}, postId={}", me.getEmail(), seller.getEmail(), postId);
 
         if (me.getId().equals(seller.getId())) {
             throw new IllegalArgumentException("자신의 게시글과는 채팅할 수 없습니다.");
@@ -176,6 +182,7 @@ public class ChatService {
 
         ChatMessageResponse payload = toMessageResponse(saved);
         messagingTemplate.convertAndSend("/topic/chat." + room.getId(), payload);
+        log.info("[SendMessage] roomId={}, sender={}, type={}", room.getId(), sender.getEmail(), req.getType());
         return payload;
     }
 
