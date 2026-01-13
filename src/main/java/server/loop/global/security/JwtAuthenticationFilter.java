@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Slf4j
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -23,12 +25,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-
-//        String path = request.getRequestURI();
-//        if (path.startsWith("/ws/") || path.startsWith("/api/ws/")) {
-//            filterChain.doFilter(request, response);
-//            return;
-//        }
 
         String token = resolveToken(request);
 
@@ -41,19 +37,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 2. 토큰 유효성 검증 후 SecurityContext 설정
         if (jwtTokenProvider.validateToken(token)) {
             String email = jwtTokenProvider.getEmail(token);
-            System.out.println("✅ 유효한 토큰. 이메일: " + email);
+            log.info("유효한 토큰. 이메일: {}", email);
 
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
             Authentication authentication =
                     new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            System.out.println("Jwt 필터 통과");
-            System.out.println("토큰 유효 여부: " + jwtTokenProvider.validateToken(token));
-            System.out.println("이메일: " + jwtTokenProvider.getEmail(token));
-            System.out.println("SecurityContext: " + SecurityContextHolder.getContext().getAuthentication());
+            log.debug("Jwt 필터 통과");
+            log.debug("토큰 유효 여부: {}", jwtTokenProvider.validateToken(token));
+            log.debug("이메일: {}", jwtTokenProvider.getEmail(token));
+            log.debug("SecurityContext: {}", SecurityContextHolder.getContext().getAuthentication());
 
         } else {
-            System.out.println("❌ 유효하지 않은 토큰");
+            log.warn("유효하지 않은 토큰");
         }
 
         // 3. 다음 필터로 요청 전달

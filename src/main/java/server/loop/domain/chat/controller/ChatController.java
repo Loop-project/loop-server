@@ -2,6 +2,7 @@ package server.loop.domain.chat.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import server.loop.global.security.CustomUserDetailsService;
 
 import java.security.Principal;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/chat")
@@ -36,9 +38,11 @@ public class ChatController {
     public void send(@Valid ChatMessageSendRequest req,
                      Principal principal) {
         if (principal == null) {
+            log.warn("[ChatSend] Principal is null");
             // Should not happen if interceptor is working
             return;
         }
+        log.info("[ChatSend] roomId={}, sender={}", req.getRoomId(), principal.getName());
         UserDetails userDetails = userDetailsService.loadUserByUsername(principal.getName());
         chatService.sendMessage(userDetails, req);
     }
@@ -48,12 +52,14 @@ public class ChatController {
     @PostMapping("/rooms")
     public ResponseEntity<ChatRoomResponse> createRoom(@RequestBody @Valid ChatRoomCreateRequest req,
                                                        @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("[CreateRoom] title={}, user={}", req.getTitle(), userDetails.getUsername());
         return ResponseEntity.ok(chatService.createRoom(userDetails, req));
     }
 
     @PostMapping("/rooms/{roomId}/join")
     public ResponseEntity<Void> join(@PathVariable String roomId,
                                      @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("[JoinRoom] roomId={}, user={}", roomId, userDetails.getUsername());
         chatService.joinPublicRoom(userDetails, roomId);
         return ResponseEntity.ok().build();
     }
@@ -61,6 +67,7 @@ public class ChatController {
     @PostMapping("/rooms/{roomId}/leave")
     public ResponseEntity<Void> leave(@PathVariable String roomId,
                                       @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("[LeaveRoom] roomId={}, user={}", roomId, userDetails.getUsername());
         chatService.leaveRoom(userDetails, roomId);
         return ResponseEntity.ok().build();
     }
@@ -93,6 +100,7 @@ public class ChatController {
     @PostMapping("/start/{postId}")
     public ResponseEntity<ChatRoomResponse> startChat(@PathVariable Long postId,
                                                       @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("[StartChat] postId={}, user={}", postId, userDetails.getUsername());
         return ResponseEntity.ok(chatService.startPrivateChat(userDetails, postId));
     }
     @GetMapping({"/rooms/me", "/rooms/my"})

@@ -3,6 +3,7 @@ package server.loop.domain.user.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import server.loop.domain.post.dto.post.res.SliceResponseDto;
 import server.loop.domain.user.dto.res.MyPagePostResponseDto;
 import server.loop.domain.user.service.MyPageService;
 
+@Slf4j
 @Tag(name = "MyPage", description = "마이페이지 관련 API")
 @RestController
 @RequiredArgsConstructor
@@ -29,6 +31,7 @@ public class MyPageController {
     public ResponseEntity<SliceResponseDto<MyPagePostResponseDto>> getMyPosts(
             @AuthenticationPrincipal UserDetails userDetails,
             @PageableDefault(size = 20) Pageable pageable) {
+        log.info("[GetMyPosts] user={}", userDetails.getUsername());
         SliceResponseDto<MyPagePostResponseDto> result = myPageService.getMyPosts(userDetails.getUsername(), pageable);
         return ResponseEntity.ok(result);
     }
@@ -39,6 +42,7 @@ public class MyPageController {
     public ResponseEntity<SliceResponseDto<MyPagePostResponseDto>> getMyCommentedPosts(
             @AuthenticationPrincipal UserDetails userDetails,
             @PageableDefault(size = 20) Pageable pageable) {
+        log.info("[GetMyCommentedPosts] user={}", userDetails.getUsername());
         SliceResponseDto<MyPagePostResponseDto> result = myPageService.getMyCommentedPosts(userDetails.getUsername(), pageable);
         return ResponseEntity.ok(result);
     }
@@ -49,6 +53,7 @@ public class MyPageController {
     public ResponseEntity<SliceResponseDto<MyPagePostResponseDto>> getMyLikedPosts(
             @AuthenticationPrincipal UserDetails userDetails,
             @PageableDefault(size = 20) Pageable pageable) {
+        log.info("[GetMyLikedPosts] user={}", userDetails.getUsername());
         SliceResponseDto<MyPagePostResponseDto> result = myPageService.getMyLikedPosts(userDetails.getUsername(), pageable);
         return ResponseEntity.ok(result);
     }

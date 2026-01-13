@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -17,6 +18,7 @@ import server.loop.domain.notification.dto.res.NotificationResponseDto;
 import server.loop.domain.notification.service.NotificationService;
 import server.loop.domain.user.entity.repository.UserRepository;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
@@ -35,9 +37,11 @@ public class NotificationController {
             @PageableDefault(size = 10, sort = "createdAt") Pageable pageable
     ) {
         if (userDetails == null) {
+            log.warn("[GetNotifications] UserDetails is null");
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("SecurityContext에서 userDetails가 비어 있음");
         }
+        log.info("[GetNotifications] user={}", userDetails.getUsername());
 
         var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow();
@@ -53,6 +57,7 @@ public class NotificationController {
             @Parameter(description = "알림 ID", required = true) @PathVariable Long id,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
     ) {
+        log.info("[ReadNotification] id={}, user={}", id, userDetails.getUsername());
         var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow();
         notificationService.markAsRead(id, user);
@@ -65,6 +70,7 @@ public class NotificationController {
     public ResponseEntity<Void> deleteAll(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
     ) {
+        log.info("[DeleteAllNotifications] user={}", userDetails.getUsername());
         var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow();
         notificationService.deleteAllByUser(user);
@@ -77,6 +83,7 @@ public class NotificationController {
     public ResponseEntity<Void> markAllAsRead(
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
     ) {
+        log.info("[ReadAllNotifications] user={}", userDetails.getUsername());
         var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow();
         notificationService.markAllAsRead(user);

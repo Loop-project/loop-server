@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import server.loop.domain.auth.dto.TokenDto;
 import server.loop.domain.auth.service.TokenService;
 
+@Slf4j
 @Tag(name = "Token", description = "토큰 관리 API")
 @RestController
 @RequiredArgsConstructor
@@ -24,7 +26,9 @@ public class TokenController {
     @PostMapping("/reissue")
     public ResponseEntity<TokenDto> reissue(
             @Parameter(description = "Refresh Token 값", required = true) @RequestHeader("RefreshToken") String refreshToken) {
+        log.info("[Reissue] RefreshToken received");
         TokenDto tokenDto = tokenService.reissueTokens(refreshToken);
+        log.info("[Reissue] Success");
         return ResponseEntity.ok(tokenDto);
     }
 }

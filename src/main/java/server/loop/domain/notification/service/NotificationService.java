@@ -1,6 +1,7 @@
 package server.loop.domain.notification.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -15,6 +16,7 @@ import server.loop.domain.user.entity.User;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
@@ -25,6 +27,8 @@ public class NotificationService {
     @Transactional
     public void send(User sender, User receiver, Post post, Comment comment, String postTitle, String message) {
         if (sender.getId().equals(receiver.getId())) return;
+
+        log.info("[SendNotification] sender={}, receiver={}, type={}", sender.getEmail(), receiver.getEmail(), message);
 
         Notification notification = Notification.builder()
                 .sender(sender)
