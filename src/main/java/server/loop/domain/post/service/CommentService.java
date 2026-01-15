@@ -2,10 +2,10 @@ package server.loop.domain.post.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import server.loop.domain.notification.service.NotificationService;
 import server.loop.domain.post.dto.comment.req.CommentCreateRequestDto;
 import server.loop.domain.post.dto.comment.req.CommentUpdateRequestDto;
 import server.loop.domain.post.dto.comment.res.CommentResponseDto;
@@ -13,6 +13,7 @@ import server.loop.domain.post.entity.Comment;
 import server.loop.domain.post.entity.Post;
 import server.loop.domain.post.entity.repository.CommentRepository;
 import server.loop.domain.post.entity.repository.PostRepository;
+import server.loop.domain.post.event.CommentCreatedEvent;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
 
@@ -28,7 +29,7 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final PostRepository postRepository;
-    private final NotificationService notificationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 댓글/대댓글 생성
     public Long createComment(CommentCreateRequestDto requestDto, String email) {
@@ -53,20 +54,26 @@ public class CommentService {
 
         commentRepository.save(comment);
 
-        // 알림 로직 시작
+        // 알림 로직 시작 (이벤트 발행으로 변경)
         User postAuthor = post.getAuthor();
         String postTitle = post.getTitle(); // 게시글 제목
 
         if (parentComment != null) {
             User parentAuthor = parentComment.getAuthor();
             if (!parentAuthor.getId().equals(author.getId())) {
-                notificationService.send(author, parentAuthor, post, comment, postTitle, "Your comment has a new reply.");
+                eventPublisher.publishEvent(new CommentCreatedEvent(
+                        author.getId(), parentAuthor.getId(), post.getId(), comment.getId(), postTitle, "Your comment has a new reply."
+                ));
             }
             if (!postAuthor.getId().equals(parentAuthor.getId()) && !postAuthor.getId().equals(author.getId())) {
-                notificationService.send(author, postAuthor, post, comment, postTitle, "Your post has a new nested comment.");
+                eventPublisher.publishEvent(new CommentCreatedEvent(
+                        author.getId(), postAuthor.getId(), post.getId(), comment.getId(), postTitle, "Your post has a new nested comment."
+                ));
             }
         } else if (!postAuthor.getId().equals(author.getId())) {
-            notificationService.send(author, postAuthor, post, comment, postTitle, "Your post has a new comment.");
+            eventPublisher.publishEvent(new CommentCreatedEvent(
+                    author.getId(), postAuthor.getId(), post.getId(), comment.getId(), postTitle, "Your post has a new comment."
+            ));
         }
         // 알림 로직 끝
 
