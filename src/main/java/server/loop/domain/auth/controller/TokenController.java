@@ -17,7 +17,7 @@ import server.loop.domain.auth.service.TokenService;
 @Tag(name = "Token", description = "토큰 관리 API")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/token")
+@RequestMapping("/api/auth")
 public class TokenController {
 
     private final TokenService tokenService;
@@ -30,5 +30,15 @@ public class TokenController {
         TokenDto tokenDto = tokenService.reissueTokens(refreshToken);
         log.info("[Reissue] Success");
         return ResponseEntity.ok(tokenDto);
+    }
+
+    @Operation(summary = "로그아웃", description = "Refresh Token을 제거하며 로그아웃 처리합니다.")
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @Parameter(description = "Refresh Token 값", required = true) @RequestHeader("RefreshToken") String refreshToken) {
+        log.info("[Logout] RefreshToken received");
+        tokenService.logout(refreshToken);
+        log.info("[Logout] Success");
+        return ResponseEntity.ok().build();
     }
 }

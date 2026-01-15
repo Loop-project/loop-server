@@ -60,6 +60,7 @@ public class CommentService {
 
         if (parentComment != null) {
             User parentAuthor = parentComment.getAuthor();
+            //대댓글일 경우
             if (!parentAuthor.getId().equals(author.getId())) {
                 eventPublisher.publishEvent(new CommentCreatedEvent(
                         author.getId(), parentAuthor.getId(), post.getId(), comment.getId(), postTitle, "Your comment has a new reply."
@@ -70,7 +71,9 @@ public class CommentService {
                         author.getId(), postAuthor.getId(), post.getId(), comment.getId(), postTitle, "Your post has a new nested comment."
                 ));
             }
-        } else if (!postAuthor.getId().equals(author.getId())) {
+        }
+        //일반 게시글일 경우
+        else if (!postAuthor.getId().equals(author.getId())) {
             eventPublisher.publishEvent(new CommentCreatedEvent(
                     author.getId(), postAuthor.getId(), post.getId(), comment.getId(), postTitle, "Your post has a new comment."
             ));

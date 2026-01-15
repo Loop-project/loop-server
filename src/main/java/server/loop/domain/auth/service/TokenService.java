@@ -31,4 +31,11 @@ public class TokenService {
 
         return new TokenDto(newAccessToken, newRefreshToken);
     }
+
+    @Transactional
+    public void logout(String refreshToken) {
+        //중복 클릭이나 만료된 토큰이 될 경우 오류가 되기에 exception을 던지지 않음
+        refreshTokenRepository.findByToken(refreshToken)
+                .ifPresent(refreshTokenRepository::delete);
+    }
 }
