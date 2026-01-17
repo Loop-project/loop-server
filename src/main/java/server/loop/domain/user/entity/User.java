@@ -86,6 +86,7 @@ public class User extends BaseEntity {
         this.nickname = nickname;
         this.age = age;
         this.gender = gender;
+        this.role = Role.USER;
         this.termsOfServiceAgreedAt = termsOfServiceAgreedAt;
         this.privacyPolicyAgreedAt = privacyPolicyAgreedAt;
         this.marketingConsentAgreedAt = marketingConsentAgreedAt;
