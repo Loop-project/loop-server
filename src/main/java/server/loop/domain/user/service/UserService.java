@@ -1,6 +1,7 @@
 package server.loop.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import server.loop.global.security.JwtTokenProvider;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -29,12 +31,15 @@ public class UserService {
     private final RefreshTokenRepository refreshTokenRepository;
 
     public Long signUp(UserSignUpDto signUpDto) throws Exception {
+        log.info("[SignUp] Request email: {}, nickname: {}", signUpDto.getEmail(), signUpDto.getNickname());
         // 이메일 중복 체크
         if (userRepository.findByEmail(signUpDto.getEmail()).isPresent()) {
+            log.warn("[SignUp] Email already exists: {}", signUpDto.getEmail());
             throw new Exception("이미 존재하는 이메일입니다.");
         }
         //닉네임 중복 체크
         if (userRepository.findByNickname(signUpDto.getNickname()).isPresent()) {
+            log.warn("[SignUp] Nickname already exists: {}", signUpDto.getNickname());
             throw new Exception("이미 존재하는 닉네임입니다.");
         }
         if (!signUpDto.isAgreedToTermsOfService() || !signUpDto.isAgreedToPrivacyPolicy()) {
@@ -54,11 +59,13 @@ public class UserService {
                 .build();
 
         userRepository.save(user);
+        log.info("[SignUp] User registered successfully. ID: {}", user.getId());
         return user.getId();
     }
 
     //로그인
     public TokenDto login(UserLoginDto loginDto) {
+        log.info("[Login] Request email: {}", loginDto.getEmail());
         User user = userRepository.findByEmailAndDeletedAtIsNull(loginDto.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다."));
 
@@ -75,6 +82,7 @@ public class UserService {
                         () -> refreshTokenRepository.save(new RefreshToken(user, refreshToken))
                 );
 
+        log.info("[Login] Success email: {}", user.getEmail());
         return new TokenDto(accessToken, refreshToken);
     }
 

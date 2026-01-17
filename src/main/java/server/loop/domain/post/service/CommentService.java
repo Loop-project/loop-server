@@ -1,10 +1,11 @@
 package server.loop.domain.post.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import server.loop.domain.notification.service.NotificationService;
 import server.loop.domain.post.dto.comment.req.CommentCreateRequestDto;
 import server.loop.domain.post.dto.comment.req.CommentUpdateRequestDto;
 import server.loop.domain.post.dto.comment.res.CommentResponseDto;
@@ -12,12 +13,14 @@ import server.loop.domain.post.entity.Comment;
 import server.loop.domain.post.entity.Post;
 import server.loop.domain.post.entity.repository.CommentRepository;
 import server.loop.domain.post.entity.repository.PostRepository;
+import server.loop.domain.post.event.CommentCreatedEvent;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -26,10 +29,11 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final PostRepository postRepository;
-    private final NotificationService notificationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 댓글/대댓글 생성
     public Long createComment(CommentCreateRequestDto requestDto, String email) {
+        log.info("[CreateComment] post={}, user={}", requestDto.getPostId(), email);
         User author = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
         Post post = postRepository.findById(requestDto.getPostId())
@@ -50,22 +54,31 @@ public class CommentService {
 
         commentRepository.save(comment);
 
-        // ✅ 알림 로직 시작
+        // 알림 로직 시작 (이벤트 발행으로 변경)
         User postAuthor = post.getAuthor();
         String postTitle = post.getTitle(); // 게시글 제목
 
         if (parentComment != null) {
             User parentAuthor = parentComment.getAuthor();
+            //대댓글일 경우
             if (!parentAuthor.getId().equals(author.getId())) {
-                notificationService.send(author, parentAuthor, post, comment, postTitle, "Your comment has a new reply.");
+                eventPublisher.publishEvent(new CommentCreatedEvent(
+                        author.getId(), parentAuthor.getId(), post.getId(), comment.getId(), postTitle, "Your comment has a new reply."
+                ));
             }
             if (!postAuthor.getId().equals(parentAuthor.getId()) && !postAuthor.getId().equals(author.getId())) {
-                notificationService.send(author, postAuthor, post, comment, postTitle, "Your post has a new nested comment.");
+                eventPublisher.publishEvent(new CommentCreatedEvent(
+                        author.getId(), postAuthor.getId(), post.getId(), comment.getId(), postTitle, "Your post has a new nested comment."
+                ));
             }
-        } else if (!postAuthor.getId().equals(author.getId())) {
-            notificationService.send(author, postAuthor, post, comment, postTitle, "Your post has a new comment.");
         }
-        // ✅ 알림 로직 끝
+        //일반 게시글일 경우
+        else if (!postAuthor.getId().equals(author.getId())) {
+            eventPublisher.publishEvent(new CommentCreatedEvent(
+                    author.getId(), postAuthor.getId(), post.getId(), comment.getId(), postTitle, "Your post has a new comment."
+            ));
+        }
+        // 알림 로직 끝
 
         return comment.getId();
     }
@@ -84,6 +97,7 @@ public class CommentService {
     }
     //댓글 수정
     public Long updateComment(Long commentId, CommentUpdateRequestDto requestDto, String email) throws AccessDeniedException {
+        log.info("[UpdateComment] commentId={}, user={}", commentId, email);
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
         if (!comment.getAuthor().getEmail().equals(email)) {
@@ -96,6 +110,7 @@ public class CommentService {
 
     // 댓글 삭제
     public Long deleteComment(Long commentId, String email) throws AccessDeniedException {
+        log.info("[DeleteComment] commentId={}, user={}", commentId, email);
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
         if (!comment.getAuthor().getEmail().equals(email)) {

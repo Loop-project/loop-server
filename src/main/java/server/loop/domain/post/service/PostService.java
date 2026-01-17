@@ -2,6 +2,7 @@ package server.loop.domain.post.service;
 
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -29,6 +30,7 @@ import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -42,6 +44,7 @@ public class PostService {
 
     // 게시글 생성
     public Long createPost(PostCreateRequestDto requestDto, List<MultipartFile> images, String email) throws IOException {
+        log.info("[CreatePost] title={}, category={}, user={}", requestDto.getTitle(), requestDto.getCategory(), email);
         User author = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
@@ -61,7 +64,7 @@ public class PostService {
                 post.addImage(postImage); // 편의 메서드로 Post-Image 관계 세팅
             }
         }
-
+        log.info("[CreatePost] Success. postId={}", post.getId());
         return post.getId();
     }
 
@@ -94,6 +97,7 @@ public class PostService {
     public Long updatePost(Long postId, PostUpdateRequestDto requestDto,
                            List<MultipartFile> images, String email)
             throws IOException {
+        log.info("[UpdatePost] postId={}, user={}", postId, email);
 
         // 1) 토큰 이메일로 현재 사용자 조회
         User editor = userRepository.findByEmail(email.trim())
@@ -130,6 +134,7 @@ public class PostService {
 
     // 게시글 삭제
     public void deletePost(Long postId, String email) throws AccessDeniedException {
+        log.info("[DeletePost] postId={}, user={}", postId, email);
         // 1. 게시글 존재 여부 확인
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
@@ -138,7 +143,7 @@ public class PostService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        // 3. ⭐ 권한 확인: 게시글 작성자와 로그인 사용자가 일치하는지 확인
+        // 3. 권한 확인: 게시글 작성자와 로그인 사용자가 일치하는지 확인
         if (!post.getAuthor().equals(user)) {
             // 작성자가 아닐 경우 AccessDeniedException 발생
             throw new AccessDeniedException("게시글을 삭제할 권한이 없습니다.");

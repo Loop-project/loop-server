@@ -87,7 +87,8 @@ public class SecurityConfig {
                         // 스웨거 문서 및 인증 관련 엔드포인트 허용
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users/signup", "/api/users/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/token/reissue").permitAll() // 토큰 재발급
+                        .requestMatchers(HttpMethod.POST, "/api/auth/reissue").permitAll() // 토큰 재발급
+                        .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll() // 로그아웃
 
                         // 게시글 조회는 누구나 가능
                         .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/**").permitAll()
@@ -107,6 +108,7 @@ public class SecurityConfig {
                         // ------------------ 인증(Authenticated) API ------------------
                         // 신고(Report) 명시 추가
                         .requestMatchers(HttpMethod.POST, "/api/posts/*/report").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/users/*/report").authenticated()
 
                         // 게시글 관련
                         .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
