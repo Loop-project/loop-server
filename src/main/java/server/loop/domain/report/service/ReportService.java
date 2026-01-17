@@ -1,4 +1,4 @@
-package server.loop.domain.post.service;
+package server.loop.domain.report.service;
 
 
 import lombok.RequiredArgsConstructor;

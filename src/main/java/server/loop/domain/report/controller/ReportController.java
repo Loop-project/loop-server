@@ -1,4 +1,4 @@
-package server.loop.domain.post.controller;
+package server.loop.domain.report.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -8,10 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import server.loop.domain.post.dto.report.req.PostReportRequestDto;
-import server.loop.domain.post.dto.report.req.UserReportRequestDto;
-import server.loop.domain.post.dto.report.res.ReportResponseDto;
-import server.loop.domain.post.service.ReportService;
+import server.loop.domain.report.dto.report.req.PostReportRequestDto;
+import server.loop.domain.report.dto.report.req.UserReportRequestDto;
+import server.loop.domain.report.dto.report.res.ReportResponseDto;
+import server.loop.domain.report.service.ReportService;
 
 @Slf4j
 @Tag(name = "Report", description = "신고 관리 API")

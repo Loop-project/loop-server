@@ -1,4 +1,4 @@
-package server.loop.domain.post.dto.report.req;
+package server.loop.domain.report.dto.report.req;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
