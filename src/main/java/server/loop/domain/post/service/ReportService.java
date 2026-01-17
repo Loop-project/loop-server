@@ -1,13 +1,13 @@
 package server.loop.domain.post.service;
 
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.loop.domain.post.entity.Post;
-import server.loop.domain.post.entity.PostReport;
-import server.loop.domain.post.entity.repository.PostReportRepository;
 import server.loop.domain.post.entity.repository.PostRepository;
+import server.loop.domain.report.entity.Report;
+import server.loop.domain.report.entity.ReportRepository;
+import server.loop.domain.report.entity.ReportTargetType;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
 
@@ -16,12 +16,9 @@ import server.loop.domain.user.entity.repository.UserRepository;
 @RequiredArgsConstructor
 public class ReportService {
 
-    private static final int REPORT_THRESHOLD = 3;
-
-    private final PostReportRepository postReportRepository;
+    private final ReportRepository reportRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-    private final EntityManager em;
 
     public String reportPost(Long postId, String email, String reason) {
         User user = userRepository.findByEmail(email)
@@ -29,19 +26,17 @@ public class ReportService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않거나 삭제된 게시글입니다."));
 
-        if (postReportRepository.existsByUserAndPost(user, post)) {
+        if (reportRepository.existsByReporterAndTargetTypeAndTargetId(user, ReportTargetType.POST, postId)) {
             throw new IllegalStateException("이미 신고한 게시글입니다.");
         }
 
-        postReportRepository.save(new PostReport(user, post, reason));
-        postRepository.incrementReportCount(postId);
-        em.clear();
+        Report report = Report.of(user, ReportTargetType.POST, postId, reason, "");
+        reportRepository.save(report);
 
-        Post updatedPost = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalStateException("게시글을 다시 조회하는 중 오류 발생"));
+        long reportCount = reportRepository.countByTargetTypeAndTargetId(ReportTargetType.POST, postId);
 
-        if (updatedPost.getReportCount() >= REPORT_THRESHOLD) {
-            updatedPost.softDelete();
+        if (reportCount >= 3) {
+            post.softDelete();
             return "신고가 3회 누적되어 게시글이 블라인드 처리되었습니다.";
         }
 
