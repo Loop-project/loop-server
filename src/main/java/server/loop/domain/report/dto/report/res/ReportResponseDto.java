@@ -1,4 +1,4 @@
-package server.loop.domain.post.dto.report.res;
+package server.loop.domain.report.dto.report.res;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
