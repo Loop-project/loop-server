@@ -1,6 +1,15 @@
 package server.loop.domain.post.service;
 
-import server.loop.domain.user.entity.UserStatus;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import server.loop.domain.post.entity.Post;
+import server.loop.domain.post.entity.repository.PostRepository;
+import server.loop.domain.report.entity.Report;
+import server.loop.domain.report.entity.ReportRepository;
+import server.loop.domain.report.entity.ReportTargetType;
+import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
 
 @Service
