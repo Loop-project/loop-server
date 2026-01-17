@@ -40,6 +40,21 @@ public class User extends BaseEntity {
     @Column(name = "gender")
     private Gender gender;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.USER;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserStatus status = UserStatus.ACTIVE;
+
+    private LocalDateTime suspendedUntil;
+    private String suspendedReason;
+
+    public void grantAdmin() {
+        this.role = Role.ADMIN;
+    }
+
     @Column(nullable = false)
     private LocalDateTime termsOfServiceAgreedAt;
 
@@ -106,5 +121,23 @@ public class User extends BaseEntity {
         this.password = null;
         this.nickname = "탈퇴한 회원(" + this.id + ")";
         this.softDelete();
+    }
+
+    public void suspend(int days, String reason) {
+        this.status = UserStatus.SUSPENDED;
+        this.suspendedUntil = LocalDateTime.now().plusDays(days);
+        this.suspendedReason = reason;
+    }
+
+    public void unsuspend() {
+        this.status = UserStatus.ACTIVE;
+        this.suspendedUntil = null;
+        this.suspendedReason = null;
+    }
+
+    public void ban(String reason) {
+        this.status = UserStatus.BANNED;
+        this.suspendedUntil = null;
+        this.suspendedReason = reason;
     }
 }
