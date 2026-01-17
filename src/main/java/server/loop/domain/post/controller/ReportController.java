@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import server.loop.domain.post.dto.report.req.PostReportRequestDto;
+import server.loop.domain.post.dto.report.req.UserReportRequestDto;
 import server.loop.domain.post.dto.report.res.ReportResponseDto;
 import server.loop.domain.post.service.ReportService;
 
@@ -28,6 +29,16 @@ public class ReportController {
                                                         @AuthenticationPrincipal UserDetails userDetails) {
         log.info("[ReportPost] postId={}, user={}, reason={}", postId, userDetails.getUsername(), requestDto.getReason());
         String message = reportService.reportPost(postId, userDetails.getUsername(), requestDto.getReason());
+        return ResponseEntity.ok(new ReportResponseDto(message));
+    }
+
+    @Operation(summary = "사용자 신고", description = "사용자를 신고합니다. 3회 누적 시 사용자는 정지됩니다.")
+    @PostMapping("/users/{userId}/report")
+    public ResponseEntity<ReportResponseDto> reportUser(@PathVariable Long userId,
+                                                        @RequestBody UserReportRequestDto requestDto,
+                                                        @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("[ReportUser] userId={}, user={}, reason={}", userId, userDetails.getUsername(), requestDto.getReason());
+        String message = reportService.reportUser(userId, userDetails.getUsername(), requestDto.getReason());
         return ResponseEntity.ok(new ReportResponseDto(message));
     }
 }
