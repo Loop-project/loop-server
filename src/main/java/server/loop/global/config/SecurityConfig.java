@@ -147,13 +147,13 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
-//                // OAuth2 로그인 설정 추가
-//                .oauth2Login(oauth2 -> oauth2
-//                        .userInfoEndpoint(userInfo -> userInfo
-//                                .userService(customOAuth2UserService) // 구글 정보 처리 서비스
-//                        )
-//                        .successHandler(oAuth2SuccessHandler)     // JWT 발급 핸들러
-//                )
+                // OAuth2 로그인 설정 추가
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService) // 구글 정보 처리 서비스
+                        )
+                        .successHandler(oAuth2SuccessHandler)     // JWT 발급 핸들러
+                )
 
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService),
                         UsernamePasswordAuthenticationFilter.class);
