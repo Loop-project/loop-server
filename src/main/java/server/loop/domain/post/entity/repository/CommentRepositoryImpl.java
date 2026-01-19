@@ -38,7 +38,7 @@ public class CommentRepositoryImpl implements CommentRepositoryCustom {
         List<Post> content = queryFactory
                 .select(comment.post)
                 .from(comment)
-                .join(comment.post, post).fetchJoin()
+                .join(comment.post, post)
                 .leftJoin(post.author, user).fetchJoin()
                 .where(
                         comment.author.eq(author),
