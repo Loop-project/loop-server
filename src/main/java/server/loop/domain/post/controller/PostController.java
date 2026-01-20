@@ -18,6 +18,7 @@ import server.loop.domain.post.dto.post.res.PostDetailResponseDto;
 import server.loop.domain.post.dto.post.res.PostResponseDto;
 import server.loop.domain.post.dto.post.res.SliceResponseDto;
 import server.loop.domain.post.entity.Category;
+import server.loop.domain.post.service.PostFacade;
 import server.loop.domain.post.service.PostService;
 import server.loop.domain.user.entity.User;
 
@@ -35,6 +36,7 @@ import java.util.Map;
 public class PostController {
 
     private final PostService postService;
+    private final PostFacade postFacade;
 
     // 게시글 생성
     @Operation(summary = "게시글 생성", description = "새로운 게시글을 작성하고 이미지 파일을 업로드합니다.")
@@ -45,7 +47,7 @@ public class PostController {
             @AuthenticationPrincipal UserDetails userDetails) throws IOException {
 
         log.info("[CREATE_POST] dto={}, category={}, principal={}", requestDto, requestDto.getCategory(), userDetails.getUsername());
-        Long postId = postService.createPost(requestDto, images, userDetails.getUsername());
+        Long postId = postFacade.createPost(requestDto, images, userDetails.getUsername());
         return ResponseEntity.ok("게시글이 성공적으로 생성되었습니다. ID: " + postId);
     }
 
@@ -72,7 +74,7 @@ public class PostController {
             @AuthenticationPrincipal UserDetails userDetails
     ) throws AccessDeniedException, IOException {
         log.info("[UPDATE_POST] postId={}, principal={}", postId, userDetails.getUsername());
-        postService.updatePost(postId, requestDto, images, userDetails.getUsername());
+        postFacade.updatePost(postId, requestDto, images, userDetails.getUsername());
         return ResponseEntity.ok("게시글이 성공적으로 수정되었습니다. ID: " + postId);
     }
 
@@ -83,7 +85,7 @@ public class PostController {
     public ResponseEntity<Map<String, Object>> deletePost(@PathVariable Long postId,
                                                           @AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
         log.info("[DELETE_POST] postId={}, principal={}", postId, userDetails.getUsername());
-        postService.deletePost(postId, userDetails.getUsername());
+        postFacade.deletePost(postId, userDetails.getUsername());
 
         Map<String, Object> response = new HashMap<>();
         response.put("message", "게시글이 성공적으로 삭제되었습니다.");
