@@ -27,24 +27,24 @@ import server.loop.global.config.s3.S3UploadService;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class PostService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-    private final PostLikeRepository postLikeRepository;
     private final S3UploadService s3UploadService; // S3 서비스 주입
     private final PostImageRepository postImageRepository; // PostImage 리포지토리 주입
 
     // 게시글 생성
-    public Long createPost(PostCreateRequestDto requestDto, List<MultipartFile> images, String email) throws IOException {
-        log.info("[CreatePost] title={}, category={}, user={}", requestDto.getTitle(), requestDto.getCategory(), email);
+    @Transactional
+    public Long createPostInTransaction(PostCreateRequestDto requestDto, List<String> imageUrls, String email) {        log.info("[CreatePost] title={}, category={}, user={}", requestDto.getTitle(), requestDto.getCategory(), email);
         User author = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
@@ -55,15 +55,15 @@ public class PostService {
                 .content(requestDto.getContent())
                 .category(requestDto.getCategory())
                 .build();
-        postRepository.save(post);
 
-        if (images != null && !images.isEmpty()) {
-            for (MultipartFile image : images) {
-                String imageUrl = s3UploadService.uploadFile(image, "post-images");
-                PostImage postImage = new PostImage(imageUrl);
-                post.addImage(postImage); // 편의 메서드로 Post-Image 관계 세팅
+        // 이미지 URL 매핑 (단순 DB 작업)
+        if (imageUrls != null) {
+            for (String url : imageUrls) {
+                post.addImage(new PostImage(url));
             }
         }
+
+        postRepository.save(post);
         log.info("[CreatePost] Success. postId={}", post.getId());
         return post.getId();
     }
@@ -94,62 +94,66 @@ public class PostService {
     }
 
     // 게시글 수정
-    public Long updatePost(Long postId, PostUpdateRequestDto requestDto,
-                           List<MultipartFile> images, String email)
-            throws IOException {
-        log.info("[UpdatePost] postId={}, user={}", postId, email);
-
-        // 1) 토큰 이메일로 현재 사용자 조회
-        User editor = userRepository.findByEmail(email.trim())
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-        // 2) 소유권 먼저, 가볍게 체크 (DB 한 번)
-        if (!postRepository.existsByIdAndAuthorId(postId, editor.getId())) {
-            throw new org.springframework.security.access.AccessDeniedException("게시글을 수정할 권한이 없습니다.");
-        }
-
-        // 3) 엔티티 로딩 후 수정
+    @Transactional
+    public List<String> updatePostInTransaction(Long postId, PostUpdateRequestDto requestDto,
+                                                List<String> newImageUrls, List<Long> deleteImageIds, String email) throws AccessDeniedException {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
 
+        // 권한 체크 (간소화)
+        if (!post.getAuthor().getEmail().equals(email)) {
+            throw new AccessDeniedException("게시글을 수정할 권한이 없습니다.");
+        }
+
+        // 텍스트 수정
         post.update(requestDto.getCategory(), requestDto.getTitle(), requestDto.getContent());
 
-        if (images != null && !images.isEmpty()) {
-            // 기존 이미지 S3 삭제
-            post.getImages().forEach(img -> s3UploadService.deleteImageFromS3(img.getImageUrl()));
-            // 관계 끊고 리스트 비우기 (orphanRemoval=true 가정)
-            post.getImages().forEach(img -> img.setPost(null));
-            post.getImages().clear();
+        List<String> deletedUrls = new ArrayList<>();
 
-            // 새 이미지 업로드
-            for (MultipartFile image : images) {
-                String url = s3UploadService.uploadFile(image, "post-images");
+        // 1. 이미지 삭제 처리 (DB 반영)
+        if (deleteImageIds != null && !deleteImageIds.isEmpty()) {
+            List<PostImage> imagesToDelete = post.getImages().stream()
+                    .filter(img -> deleteImageIds.contains(img.getId()))
+                    .toList();
+
+            // 삭제될 URL 수집 (반환용)
+            deletedUrls.addAll(imagesToDelete.stream().map(PostImage::getImageUrl).toList());
+
+            // 연관관계 끊기 (OrphanRemoval 동작)
+            post.getImages().removeAll(imagesToDelete);
+        }
+
+        // 2. 새 이미지 추가 (DB 반영)
+        if (newImageUrls != null) {
+            for (String url : newImageUrls) {
                 post.addImage(new PostImage(url));
             }
         }
-        return postId;
+
+        // S3에서 지워야 할 URL 목록 반환
+        return deletedUrls;
     }
 
 
 
     // 게시글 삭제
-    public void deletePost(Long postId, String email) throws AccessDeniedException {
-        log.info("[DeletePost] postId={}, user={}", postId, email);
-        // 1. 게시글 존재 여부 확인
+    @Transactional
+    public List<String> deletePostInTransaction(Long postId, String email) throws AccessDeniedException {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
 
-        // 2. 로그인한 사용자 정보 조회
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-        // 3. 권한 확인: 게시글 작성자와 로그인 사용자가 일치하는지 확인
-        if (!post.getAuthor().equals(user)) {
-            // 작성자가 아닐 경우 AccessDeniedException 발생
+        if (!post.getAuthor().getEmail().equals(email)) {
             throw new AccessDeniedException("게시글을 삭제할 권한이 없습니다.");
         }
 
-        post.softDelete();
+        // 삭제 전 이미지 URL 백업
+        List<String> imageUrls = post.getImages().stream()
+                .map(PostImage::getImageUrl)
+                .collect(Collectors.toList());
+
+        post.softDelete(); // DB Soft Delete
+
+        return imageUrls; // S3 삭제를 위해 반환
     }
 
     @Transactional(readOnly = true)
