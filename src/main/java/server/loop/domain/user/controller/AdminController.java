@@ -26,6 +26,8 @@ import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
 import server.loop.domain.user.service.AdminService;
 import server.loop.global.common.PageResponse;
+import server.loop.global.common.error.ErrorCode;
+import server.loop.global.common.exception.CustomException;
 
 @RestController
 @RequiredArgsConstructor
@@ -91,7 +93,7 @@ public class AdminController {
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         User admin = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Admin not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Admin not found"));
         adminService.resolveReport(reportId, admin);
         return ResponseEntity.ok().build();
     }
@@ -116,7 +118,7 @@ public class AdminController {
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         User admin = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Admin not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Admin not found"));
         adminService.rejectReport(reportId, admin);
         return ResponseEntity.ok().build();
     }

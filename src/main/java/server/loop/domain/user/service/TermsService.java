@@ -6,6 +6,8 @@ import org.springframework.transaction.annotation.Transactional;
 import server.loop.domain.user.dto.res.TermsResponseDto;
 import server.loop.domain.user.entity.TermsType;
 import server.loop.domain.user.entity.repository.TermsRepository;
+import server.loop.global.common.error.ErrorCode;
+import server.loop.global.common.exception.CustomException;
 
 @Service
 @Transactional(readOnly = true)
@@ -17,7 +19,7 @@ public class TermsService {
     public TermsResponseDto getLatestTerms(TermsType type) {
         return termsRepository.findFirstByTypeOrderByVersionDesc(type)
                 .map(TermsResponseDto::from)
-                .orElseThrow(() -> new IllegalArgumentException(type + " 타입의 약관을 찾을 수 없습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.TERMS_NOT_FOUND, type + " 타입의 약관을 찾을 수 없습니다."));
 
     }
 }

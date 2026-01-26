@@ -28,6 +28,7 @@ public enum ErrorCode {
     CHAT_ROOM_NOT_FOUND("4042", "해당 채팅방을 찾을 수 없습니다."),
     NOTIFICATION_NOT_FOUND("4043", "해당 알림을 찾을 수 없습니다."),
     COMMENT_NOT_FOUND("4044", "해당 댓글을 찾을 수 없습니다."),
+    TERMS_NOT_FOUND("4045", "해당 타입의 약관을 찾을 수 없습니다."),
 
     // 405 Using wrong HTTP Method
     WRONG_METHOD("4050", "허용되지 않은 메소드 입니다."),

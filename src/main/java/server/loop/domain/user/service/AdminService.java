@@ -17,6 +17,8 @@ import server.loop.domain.user.dto.res.AdminReportResponse;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
 import server.loop.global.common.PageResponse;
+import server.loop.global.common.error.ErrorCode;
+import server.loop.global.common.exception.CustomException;
 
 @Service
 @RequiredArgsConstructor
@@ -43,55 +45,55 @@ public class AdminService {
 
     public void resolveReport(Long reportId, User admin) {
         Report report = reportRepository.findById(reportId)
-                .orElseThrow(() -> new IllegalArgumentException("Report not found: " + reportId));
+                .orElseThrow(() -> new CustomException(ErrorCode.UNKNOWN_SERVER_ERROR, "Report not found: " + reportId));
         report.resolve(admin);
     }
 
     //특정 신고를 '반려(REJECTED)' 상태로 변경
     public void rejectReport(Long reportId, User admin) {
         Report report = reportRepository.findById(reportId)
-                .orElseThrow(() -> new IllegalArgumentException("Report not found: " + reportId));
+                .orElseThrow(() -> new CustomException(ErrorCode.UNKNOWN_SERVER_ERROR, "Report not found: " + reportId));
         report.reject(admin);
     }
 
     //관리자 권한으로 특정 게시글을 삭제
     public void deletePost(Long postId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("Post not found: " + postId));
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND, "Post not found: " + postId));
         post.softDelete();
     }
 
     //관리자 권한으로 특정 댓글을 논리적으로 삭제
     public void deleteComment(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("Comment not found: " + commentId));
+                .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND, "Comment not found: " + commentId));
         comment.softDelete();
     }
 
     // 특정 사용자를 지정된 기간 동안 정지
     public void suspendUser(Long userId, int days, String reason) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "User not found: " + userId));
         user.suspend(days, reason);
     }
 
     //특정 사용자의 정지를 해제합니다.
     public void unsuspendUser(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "User not found: " + userId));
         user.unsuspend();
     }
 
     // 특정 사용자를 영구적으로 정지
     public void banUser(Long userId, String reason) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "User not found: " + userId));
         user.ban(reason);
     }
 
     public void grantAdminRole(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "User not found: " + userId));
         user.grantAdmin();
     }
 }
