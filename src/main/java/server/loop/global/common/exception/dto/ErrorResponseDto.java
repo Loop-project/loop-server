@@ -1,10 +1,10 @@
 package server.loop.global.common.exception.dto;
 
-import capstone.mju.backend.domain.common.exception.CustomException;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import server.loop.global.common.exception.CustomException;
 
 @AllArgsConstructor
 @Getter

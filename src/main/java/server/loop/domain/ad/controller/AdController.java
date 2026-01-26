@@ -34,7 +34,7 @@ public class AdController {
             @RequestPart("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestPart("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestPart("active") boolean active
-    ) throws IOException {
+    ) {
         log.info("[CreateAd] linkUrl={}, start={}, end={}, active={}", linkUrl, startDate, endDate, active);
         Ad savedAd = adService.createAd(image, linkUrl, startDate, endDate, active);
         return ResponseEntity.ok(savedAd);

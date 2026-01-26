@@ -1,7 +1,7 @@
 package server.loop.global.common.exception;
 
 
-import capstone.mju.backend.domain.common.error.ErrorCode;
+import server.loop.global.common.error.ErrorCode;
 
 public class DtoValidationException extends CustomException {
     public DtoValidationException(ErrorCode errorCode, String detail) {

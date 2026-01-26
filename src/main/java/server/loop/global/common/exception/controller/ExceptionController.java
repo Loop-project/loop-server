@@ -1,9 +1,9 @@
 package server.loop.global.common.exception.controller;
 
-import capstone.mju.backend.domain.common.error.ErrorCode;
-import capstone.mju.backend.domain.common.exception.CustomException;
-import capstone.mju.backend.domain.common.exception.DtoValidationException;
-import capstone.mju.backend.domain.common.exception.dto.ErrorResponseDto;
+import server.loop.global.common.error.ErrorCode;
+import server.loop.global.common.exception.CustomException;
+import server.loop.global.common.exception.DtoValidationException;
+import server.loop.global.common.exception.dto.ErrorResponseDto;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;

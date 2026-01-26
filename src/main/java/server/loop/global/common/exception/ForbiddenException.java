@@ -1,7 +1,7 @@
 package server.loop.global.common.exception;
 
 
-import capstone.mju.backend.domain.common.error.ErrorCode;
+import server.loop.global.common.error.ErrorCode;
 
 public class ForbiddenException extends CustomException {
     public ForbiddenException(ErrorCode errorCode) {
