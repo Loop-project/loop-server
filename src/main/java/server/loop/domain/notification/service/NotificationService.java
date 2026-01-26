@@ -13,6 +13,8 @@ import server.loop.domain.notification.entity.repository.NotificationRepository;
 import server.loop.domain.post.entity.Comment;
 import server.loop.domain.post.entity.Post;
 import server.loop.domain.user.entity.User;
+import server.loop.global.common.error.ErrorCode;
+import server.loop.global.common.exception.CustomException;
 
 import java.util.List;
 
@@ -55,9 +57,9 @@ public class NotificationService {
     @Transactional
     public void markAsRead(Long id, User user) {
         Notification notification = notificationRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("알림 없음"));
+                .orElseThrow(() -> new CustomException(ErrorCode.NOTIFICATION_NOT_FOUND));
         if (!notification.getReceiver().getId().equals(user.getId())) {
-            throw new SecurityException("본인의 알림만 열람 가능");
+            throw new CustomException(ErrorCode.FORBIDDEN_USER, "본인의 알림만 열람 가능");
         }
         notification.markAsRead();
     }
