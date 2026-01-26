@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import server.loop.domain.notification.dto.res.NotificationResponseDto;
 import server.loop.domain.notification.service.NotificationService;
 import server.loop.domain.user.entity.repository.UserRepository;
+import server.loop.global.common.error.ErrorCode;
+import server.loop.global.common.exception.CustomException;
 
 @Slf4j
 @RestController
@@ -44,7 +46,7 @@ public class NotificationController {
         log.info("[GetNotifications] user={}", userDetails.getUsername());
 
         var user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow();
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
         Page<NotificationResponseDto> notifications = notificationService.getUserNotifications(user, pageable);
         return ResponseEntity.ok(notifications);
@@ -59,7 +61,7 @@ public class NotificationController {
     ) {
         log.info("[ReadNotification] id={}, user={}", id, userDetails.getUsername());
         var user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow();
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
         notificationService.markAsRead(id, user);
         return ResponseEntity.ok().build();
     }
@@ -72,7 +74,7 @@ public class NotificationController {
     ) {
         log.info("[DeleteAllNotifications] user={}", userDetails.getUsername());
         var user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow();
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
         notificationService.deleteAllByUser(user);
         return ResponseEntity.ok().build();
     }
@@ -85,7 +87,7 @@ public class NotificationController {
     ) {
         log.info("[ReadAllNotifications] user={}", userDetails.getUsername());
         var user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow();
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
         notificationService.markAllAsRead(user);
         return ResponseEntity.ok().build();
     }
@@ -97,7 +99,7 @@ public class NotificationController {
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
     ) {
         var user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow();
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
         int count = notificationService.countUnreadNotifications(user);
         return ResponseEntity.ok(count);
     }

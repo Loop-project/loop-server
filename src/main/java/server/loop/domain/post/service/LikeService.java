@@ -13,6 +13,8 @@ import server.loop.domain.post.entity.repository.PostLikeRepository;
 import server.loop.domain.post.entity.repository.PostRepository;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
+import server.loop.global.common.error.ErrorCode;
+import server.loop.global.common.exception.CustomException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -32,9 +34,9 @@ public class LikeService {
 
     public PostLikeResponseDto toggleLike(Long postId, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         // Optional을 활용하여 좋아요 존재 여부 확인
         Optional<PostLike> existingLike = postLikeRepository.findByUserAndPost(user, post);
