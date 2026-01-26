@@ -11,6 +11,8 @@ import server.loop.domain.report.entity.ReportRepository;
 import server.loop.domain.report.entity.ReportTargetType;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
+import server.loop.global.common.error.ErrorCode;
+import server.loop.global.common.exception.CustomException;
 
 @Service
 @Transactional
@@ -25,12 +27,12 @@ public class ReportService {
 
     public String reportPost(Long postId, String email, String reason) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않거나 삭제된 게시글입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND, "존재하지 않거나 삭제된 게시글입니다."));
 
         if (reportRepository.existsByReporterAndTargetTypeAndTargetId(user, ReportTargetType.POST, postId)) {
-            throw new IllegalStateException("이미 신고한 게시글입니다.");
+            throw new CustomException(ErrorCode.ALREADY_EXISTS, "이미 신고한 게시글입니다.");
         }
 
         Report report = Report.of(user, ReportTargetType.POST, postId, reason, "");
@@ -48,16 +50,16 @@ public class ReportService {
 
     public String reportUser(Long targetUserId, String reporterEmail, String reason) {
         User reporter = userRepository.findByEmail(reporterEmail)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 신고자입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "존재하지 않는 신고자입니다."));
         User targetUser = userRepository.findById(targetUserId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "존재하지 않는 사용자입니다."));
 
         if (reporter.getId().equals(targetUser.getId())) {
-            throw new IllegalArgumentException("자기 자신을 신고할 수 없습니다.");
+            throw new CustomException(ErrorCode.CONFLICT, "자기 자신을 신고할 수 없습니다.");
         }
 
         if (reportRepository.existsByReporterAndTargetTypeAndTargetId(reporter, ReportTargetType.USER, targetUserId)) {
-            throw new IllegalStateException("이미 신고한 사용자입니다.");
+            throw new CustomException(ErrorCode.ALREADY_EXISTS, "이미 신고한 사용자입니다.");
         }
 
         Report report = Report.of(reporter, ReportTargetType.USER, targetUserId, reason, "");
