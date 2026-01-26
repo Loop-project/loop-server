@@ -25,6 +25,7 @@ public enum ErrorCode {
     // 404 Not Found
     POST_NOT_FOUND("4040", "해당 포스트를 찾을 수 없습니다."),
     USER_NOT_FOUND("4041", "해당 유저를 찾을 수 없습니다. "),
+    CHAT_ROOM_NOT_FOUND("4042", "해당 채팅방을 찾을 수 없습니다."),
 
     // 405 Using wrong HTTP Method
     WRONG_METHOD("4050", "허용되지 않은 메소드 입니다."),
