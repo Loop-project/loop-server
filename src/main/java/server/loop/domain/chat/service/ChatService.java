@@ -188,16 +188,19 @@ public class ChatService {
     }
 
     @Transactional(readOnly = true)
-    public List<ChatMessageResponse> getMessages(UserDetails userDetails, String roomId, int size, Long beforeId) {
+    public List<ChatMessageResponse> getMessages(UserDetails userDetails, String roomId, int size, Long beforeId, Long afterId) {
         User me = currentUser(userDetails);
         ChatRoom room = getRoomOrThrow(roomId);
 
         if (!memberRepository.existsByRoomAndUser(room, me)) {
             throw new IllegalStateException("해당 채팅방의 멤버가 아닙니다.");
         }
+        if (beforeId != null && afterId != null) {
+            throw new IllegalArgumentException("beforeId와 afterId는 동시에 사용할 수 없습니다.");
+        }
 
         PageRequest pr = PageRequest.of(0, Math.min(size, 100));
-        List<ChatMessage> list = messageRepository.findMessages(roomId, beforeId, pr);
+        List<ChatMessage> list = messageRepository.findMessages(roomId, beforeId, afterId, pr);
 
         return list.stream().map(this::toMessageResponse).toList();
     }

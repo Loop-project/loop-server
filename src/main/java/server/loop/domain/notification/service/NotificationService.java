@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +52,19 @@ public class NotificationService {
     public Page<NotificationResponseDto> getUserNotifications(User receiver, Pageable pageable) {
         return notificationRepository.findByReceiverOrderByCreatedAtDesc(receiver, pageable)
                 .map(NotificationResponseDto::from);
+    }
+
+    @Transactional(readOnly = true)
+    public List<NotificationResponseDto> getNotificationsSince(User receiver, Long afterId, int size) {
+        if (afterId == null) {
+            return List.of();
+        }
+        int boundedSize = Math.min(Math.max(size, 1), 100);
+        return notificationRepository
+                .findByReceiverAndIdGreaterThanOrderByIdAsc(receiver, afterId, PageRequest.of(0, boundedSize))
+                .stream()
+                .map(NotificationResponseDto::from)
+                .toList();
     }
 
     @Transactional
