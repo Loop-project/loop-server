@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -39,14 +40,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String email = jwtTokenProvider.getEmail(token);
             log.info("유효한 토큰. 이메일: {}", email);
 
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-            Authentication authentication =
-                    new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            log.debug("Jwt 필터 통과");
-            log.debug("토큰 유효 여부: {}", jwtTokenProvider.validateToken(token));
-            log.debug("이메일: {}", jwtTokenProvider.getEmail(token));
-            log.debug("SecurityContext: {}", SecurityContextHolder.getContext().getAuthentication());
+            try {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                Authentication authentication =
+                        new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.debug("Jwt 필터 통과");
+                log.debug("토큰 유효 여부: {}", jwtTokenProvider.validateToken(token));
+                log.debug("이메일: {}", jwtTokenProvider.getEmail(token));
+                log.debug("SecurityContext: {}", SecurityContextHolder.getContext().getAuthentication());
+            } catch (UsernameNotFoundException e) {
+                SecurityContextHolder.clearContext();
+                log.warn("토큰 사용자 인증 실패: {}", e.getMessage());
+            }
 
         } else {
             log.warn("유효하지 않은 토큰");

@@ -28,7 +28,7 @@ public class ReportService {
     public String reportPost(Long postId, String email, String reason) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        Post post = postRepository.findById(postId)
+        Post post = postRepository.findByIdAndIsDeletedFalse(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND, "존재하지 않거나 삭제된 게시글입니다."));
 
         if (reportRepository.existsByReporterAndTargetTypeAndTargetId(user, ReportTargetType.POST, postId)) {

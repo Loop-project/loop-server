@@ -14,6 +14,7 @@ import server.loop.domain.user.dto.req.UserSignUpDto;
 import server.loop.domain.user.dto.req.UserUpdateRequestDto;
 import server.loop.domain.user.dto.res.UserResponseDto;
 import server.loop.domain.user.entity.User;
+import server.loop.domain.user.entity.UserStatus;
 import server.loop.domain.user.entity.repository.UserRepository;
 import server.loop.global.common.error.ErrorCode;
 import server.loop.global.common.exception.CustomException;
@@ -74,6 +75,8 @@ public class UserService {
         if (!passwordEncoder.matches(loginDto.getPassword(), user.getPassword())) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_USER, "아이디 또는 비밀번호가 올바르지 않습니다.");
         }
+
+        validateUserStatusForLogin(user);
 
         String accessToken = jwtTokenProvider.createAccessToken(user.getEmail());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail());
@@ -152,6 +155,18 @@ public class UserService {
         String encodedNewPassword = passwordEncoder.encode(dto.getNewPassword());
         user.updatePassword(encodedNewPassword);
         userRepository.save(user);
+    }
+
+    private void validateUserStatusForLogin(User user) {
+        if (user.getStatus() == UserStatus.BANNED) {
+            throw new CustomException(ErrorCode.FORBIDDEN_USER, "영구 정지된 계정입니다.");
+        }
+        if (user.getStatus() == UserStatus.SUSPENDED) {
+            throw new CustomException(ErrorCode.FORBIDDEN_USER, "정지된 계정입니다.");
+        }
+        if (user.getStatus() == UserStatus.WITHDRAWN || user.getDeletedAt() != null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED_USER, "탈퇴한 계정입니다.");
+        }
     }
 
 }

@@ -1,11 +1,9 @@
 package server.loop.domain.post.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.loop.domain.post.dto.post.res.PostLikeResponseDto;
-import server.loop.domain.post.dto.post.res.PostResponseDto;
 import server.loop.domain.post.dto.post.res.TopLikedPostResponseDto;
 import server.loop.domain.post.entity.Post;
 import server.loop.domain.post.entity.PostLike;
@@ -35,7 +33,7 @@ public class LikeService {
     public PostLikeResponseDto toggleLike(Long postId, String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        Post post = postRepository.findById(postId)
+        Post post = postRepository.findByIdAndIsDeletedFalse(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         // Optional을 활용하여 좋아요 존재 여부 확인

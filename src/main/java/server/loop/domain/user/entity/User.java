@@ -118,6 +118,9 @@ public class User extends BaseEntity {
     // 탈퇴 처리
     public void withdraw() {
         this.deletedAt = LocalDateTime.now();
+        this.status = UserStatus.WITHDRAWN;
+        this.suspendedUntil = null;
+        this.suspendedReason = null;
         this.email = null;
         this.password = null;
         this.nickname = "탈퇴한 회원(" + this.id + ")";

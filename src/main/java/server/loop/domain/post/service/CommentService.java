@@ -3,7 +3,6 @@ package server.loop.domain.post.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.loop.domain.post.dto.comment.req.CommentCreateRequestDto;
@@ -38,13 +37,16 @@ public class CommentService {
         log.info("[CreateComment] post={}, user={}", requestDto.getPostId(), email);
         User author = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        Post post = postRepository.findById(requestDto.getPostId())
+        Post post = postRepository.findByIdAndIsDeletedFalse(requestDto.getPostId())
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         Comment parentComment = null;
         if (requestDto.getParentId() != null) {
-            parentComment = commentRepository.findById(requestDto.getParentId())
+            parentComment = commentRepository.findByIdAndIsDeletedFalse(requestDto.getParentId())
                     .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND, "존재하지 않는 부모 댓글입니다."));
+            if (!parentComment.getPost().getId().equals(post.getId())) {
+                throw new CustomException(ErrorCode.CONFLICT, "부모 댓글이 현재 게시글에 속하지 않습니다.");
+            }
         }
 
         Comment comment = Comment.builder()
@@ -89,7 +91,7 @@ public class CommentService {
     // 특정 게시글의 댓글 목록 조회 (계층 구조로 변환)
     @Transactional(readOnly = true)
     public List<CommentResponseDto> getCommentsByPost(Long postId) {
-        Post post = postRepository.findById(postId)
+        Post post = postRepository.findByIdAndIsDeletedFalse(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         return commentRepository.findAllByPost(post).stream()
@@ -100,7 +102,7 @@ public class CommentService {
     //댓글 수정
     public Long updateComment(Long commentId, CommentUpdateRequestDto requestDto, String email) {
         log.info("[UpdateComment] commentId={}, user={}", commentId, email);
-        Comment comment = commentRepository.findById(commentId)
+        Comment comment = commentRepository.findByIdAndIsDeletedFalse(commentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
         if (!comment.getAuthor().getEmail().equals(email)) {
             throw new CustomException(ErrorCode.FORBIDDEN_USER, "댓글을 수정할 권한이 없습니다.");
@@ -113,7 +115,7 @@ public class CommentService {
     // 댓글 삭제
     public Long deleteComment(Long commentId, String email) {
         log.info("[DeleteComment] commentId={}, user={}", commentId, email);
-        Comment comment = commentRepository.findById(commentId)
+        Comment comment = commentRepository.findByIdAndIsDeletedFalse(commentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
         if (!comment.getAuthor().getEmail().equals(email)) {
             throw new CustomException(ErrorCode.FORBIDDEN_USER, "댓글을 삭제할 권한이 없습니다.");

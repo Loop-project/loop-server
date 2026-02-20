@@ -125,7 +125,7 @@ public class ChatService {
     public ChatRoomResponse startPrivateChat(UserDetails userDetails, Long postId) {
         User me = currentUser(userDetails);
 
-        Post post = postRepository.findById(postId)
+        Post post = postRepository.findByIdAndIsDeletedFalse(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         if (post.getCategory() != Category.USED) {

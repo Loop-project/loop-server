@@ -93,7 +93,7 @@ public class PostService {
     @Transactional
     public List<String> updatePostInTransaction(Long postId, PostUpdateRequestDto requestDto,
                                                 List<String> newImageUrls, List<Long> deleteImageIds, String email) {
-        Post post = postRepository.findById(postId)
+        Post post = postRepository.findByIdAndIsDeletedFalse(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         // 권한 체크 (간소화)
@@ -135,7 +135,7 @@ public class PostService {
     // 게시글 삭제
     @Transactional
     public List<String> deletePostInTransaction(Long postId, String email) {
-        Post post = postRepository.findById(postId)
+        Post post = postRepository.findByIdAndIsDeletedFalse(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         if (!post.getAuthor().getEmail().equals(email)) {

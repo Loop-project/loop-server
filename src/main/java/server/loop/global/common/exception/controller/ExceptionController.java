@@ -70,6 +70,31 @@ public class ExceptionController {
     }
 
     private HttpStatus resolveHttpStatus(CustomException customException){
-        return HttpStatus.resolve(Integer.parseInt(customException.getErrorCode().getCode().substring(0,3)));
+        String errorCode = customException.getErrorCode().getCode();
+        if (errorCode == null || errorCode.length() < 3) {
+            return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+
+        try {
+            HttpStatus resolved = HttpStatus.resolve(Integer.parseInt(errorCode.substring(0, 3)));
+            if (resolved != null) {
+                return resolved;
+            }
+        } catch (NumberFormatException ignored) {
+            return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+
+        // Non-HTTP custom code fallback
+        if (errorCode.startsWith("9")) {
+            return HttpStatus.BAD_REQUEST;
+        }
+        if (errorCode.startsWith("6")) {
+            return switch (customException.getErrorCode()) {
+                case EMPTY_FILE_EXCEPTION, NO_FILE_EXTENSION, INVALID_FILE_EXTENSION -> HttpStatus.BAD_REQUEST;
+                default -> HttpStatus.INTERNAL_SERVER_ERROR;
+            };
+        }
+
+        return HttpStatus.INTERNAL_SERVER_ERROR;
     }
 }
