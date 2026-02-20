@@ -20,6 +20,8 @@ import server.loop.domain.user.entity.repository.UserRepository;
 import server.loop.global.common.error.ErrorCode;
 import server.loop.global.common.exception.CustomException;
 
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/notifications")
@@ -50,6 +52,21 @@ public class NotificationController {
 
         Page<NotificationResponseDto> notifications = notificationService.getUserNotifications(user, pageable);
         return ResponseEntity.ok(notifications);
+    }
+
+    @Operation(summary = "누락 알림 동기화", description = "특정 알림 ID 이후 생성된 알림만 조회합니다.")
+    @ApiResponse(responseCode = "200", description = "누락 알림 동기화 성공")
+    @GetMapping("/sync")
+    public ResponseEntity<List<NotificationResponseDto>> syncNotifications(
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails,
+            @Parameter(description = "마지막으로 수신한 알림 ID", example = "120")
+            @RequestParam Long afterId,
+            @Parameter(description = "조회 크기(최대 100)", example = "50")
+            @RequestParam(defaultValue = "50") int size
+    ) {
+        var user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow();
+        return ResponseEntity.ok(notificationService.getNotificationsSince(user, afterId, size));
     }
 
     @Operation(summary = "단일 알림 읽음 처리", description = "알림 ID를 기반으로 해당 알림을 읽음 처리합니다.")

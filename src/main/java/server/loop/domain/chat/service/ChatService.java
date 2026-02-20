@@ -2,10 +2,10 @@ package server.loop.domain.chat.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +20,7 @@ import server.loop.domain.chat.entity.ChatRoomMember;
 import server.loop.domain.chat.entity.repository.ChatMessageRepository;
 import server.loop.domain.chat.entity.repository.ChatRoomMemberRepository;
 import server.loop.domain.chat.entity.repository.ChatRoomRepository;
+import server.loop.domain.chat.event.ChatMessageSavedEvent;
 import server.loop.domain.post.entity.Category;
 import server.loop.domain.post.entity.Post;
 import server.loop.domain.post.entity.repository.PostRepository;
@@ -40,7 +41,7 @@ public class ChatService {
     private final ChatRoomMemberRepository memberRepository;
     private final ChatMessageRepository messageRepository;
     private final UserRepository userRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final ApplicationEventPublisher eventPublisher;
     private final PostRepository postRepository;
 
     // ==== Room ====
@@ -183,22 +184,25 @@ public class ChatService {
                 .build());
 
         ChatMessageResponse payload = toMessageResponse(saved);
-        messagingTemplate.convertAndSend("/topic/chat." + room.getId(), payload);
+        eventPublisher.publishEvent(new ChatMessageSavedEvent(room.getId(), payload));
         log.info("[SendMessage] roomId={}, sender={}, type={}", room.getId(), sender.getEmail(), req.getType());
         return payload;
     }
 
     @Transactional(readOnly = true)
-    public List<ChatMessageResponse> getMessages(UserDetails userDetails, String roomId, int size, Long beforeId) {
+    public List<ChatMessageResponse> getMessages(UserDetails userDetails, String roomId, int size, Long beforeId, Long afterId) {
         User me = currentUser(userDetails);
         ChatRoom room = getRoomOrThrow(roomId);
 
         if (!memberRepository.existsByRoomAndUser(room, me)) {
             throw new CustomException(ErrorCode.FORBIDDEN_USER, "해당 채팅방의 멤버가 아닙니다.");
         }
+        if (beforeId != null && afterId != null) {
+            throw new IllegalArgumentException("beforeId와 afterId는 동시에 사용할 수 없습니다.");
+        }
 
         PageRequest pr = PageRequest.of(0, Math.min(size, 100));
-        List<ChatMessage> list = messageRepository.findMessages(roomId, beforeId, pr);
+        List<ChatMessage> list = messageRepository.findMessages(roomId, beforeId, afterId, pr);
 
         return list.stream().map(this::toMessageResponse).toList();
     }
