@@ -2,14 +2,15 @@ package server.loop.domain.notification.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.loop.domain.notification.dto.res.NotificationResponseDto;
 import server.loop.domain.notification.entity.Notification;
 import server.loop.domain.notification.entity.repository.NotificationRepository;
+import server.loop.domain.notification.event.NotificationSavedEvent;
 import server.loop.domain.post.entity.Comment;
 import server.loop.domain.post.entity.Post;
 import server.loop.domain.user.entity.User;
@@ -22,7 +23,7 @@ import java.util.List;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void send(User sender, User receiver, Post post, Comment comment, String postTitle, String message) {
@@ -42,7 +43,7 @@ public class NotificationService {
         notificationRepository.save(notification);
 
         NotificationResponseDto dto = NotificationResponseDto.from(notification);
-        messagingTemplate.convertAndSendToUser(receiver.getEmail(), "/queue/notifications", dto);
+        eventPublisher.publishEvent(new NotificationSavedEvent(receiver.getEmail(), dto));
     }
 
 

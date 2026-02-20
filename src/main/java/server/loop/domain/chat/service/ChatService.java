@@ -2,10 +2,10 @@ package server.loop.domain.chat.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +20,7 @@ import server.loop.domain.chat.entity.ChatRoomMember;
 import server.loop.domain.chat.entity.repository.ChatMessageRepository;
 import server.loop.domain.chat.entity.repository.ChatRoomMemberRepository;
 import server.loop.domain.chat.entity.repository.ChatRoomRepository;
+import server.loop.domain.chat.event.ChatMessageSavedEvent;
 import server.loop.domain.post.entity.Category;
 import server.loop.domain.post.entity.Post;
 import server.loop.domain.post.entity.repository.PostRepository;
@@ -38,7 +39,7 @@ public class ChatService {
     private final ChatRoomMemberRepository memberRepository;
     private final ChatMessageRepository messageRepository;
     private final UserRepository userRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final ApplicationEventPublisher eventPublisher;
     private final PostRepository postRepository;
 
     // ==== Room ====
@@ -181,7 +182,7 @@ public class ChatService {
                 .build());
 
         ChatMessageResponse payload = toMessageResponse(saved);
-        messagingTemplate.convertAndSend("/topic/chat." + room.getId(), payload);
+        eventPublisher.publishEvent(new ChatMessageSavedEvent(room.getId(), payload));
         log.info("[SendMessage] roomId={}, sender={}, type={}", room.getId(), sender.getEmail(), req.getType());
         return payload;
     }
