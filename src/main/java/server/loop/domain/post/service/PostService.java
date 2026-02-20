@@ -3,13 +3,10 @@ package server.loop.domain.post.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 import server.loop.domain.post.dto.post.req.PostCreateRequestDto;
 import server.loop.domain.post.dto.post.req.PostUpdateRequestDto;
 import server.loop.domain.post.dto.post.res.PostDetailResponseDto;
@@ -23,13 +20,12 @@ import server.loop.domain.post.entity.repository.PostLikeRepository;
 import server.loop.domain.post.entity.repository.PostRepository;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
+import server.loop.global.common.error.ErrorCode;
+import server.loop.global.common.exception.CustomException;
 import server.loop.global.config.s3.S3UploadService;
 
-import java.io.IOException;
-import java.nio.file.AccessDeniedException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -46,7 +42,7 @@ public class PostService {
     @Transactional
     public Long createPostInTransaction(PostCreateRequestDto requestDto, List<String> imageUrls, String email) {        log.info("[CreatePost] title={}, category={}, user={}", requestDto.getTitle(), requestDto.getCategory(), email);
         User author = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         // 1. 게시글의 텍스트 내용(제목, 본문 등)을 먼저 DB에 저장합니다.
         Post post = Post.builder()
@@ -72,7 +68,7 @@ public class PostService {
     @Transactional(readOnly = true)
     public PostDetailResponseDto getPost(Long postId, User currentUser) {
         Post post = postRepository.findActivePostWithCommentsById(postId)
-                .orElseThrow(() -> new NoSuchElementException("게시글을 찾을 수 없습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
         boolean likedByUser = currentUser != null && post.isLikedBy(currentUser);
         return new PostDetailResponseDto(post, likedByUser);
     }
@@ -96,13 +92,13 @@ public class PostService {
     // 게시글 수정
     @Transactional
     public List<String> updatePostInTransaction(Long postId, PostUpdateRequestDto requestDto,
-                                                List<String> newImageUrls, List<Long> deleteImageIds, String email) throws AccessDeniedException {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+                                                List<String> newImageUrls, List<Long> deleteImageIds, String email) {
+        Post post = postRepository.findByIdAndIsDeletedFalse(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         // 권한 체크 (간소화)
         if (!post.getAuthor().getEmail().equals(email)) {
-            throw new AccessDeniedException("게시글을 수정할 권한이 없습니다.");
+            throw new CustomException(ErrorCode.FORBIDDEN_USER, "게시글을 수정할 권한이 없습니다.");
         }
 
         // 텍스트 수정
@@ -138,12 +134,12 @@ public class PostService {
 
     // 게시글 삭제
     @Transactional
-    public List<String> deletePostInTransaction(Long postId, String email) throws AccessDeniedException {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+    public List<String> deletePostInTransaction(Long postId, String email) {
+        Post post = postRepository.findByIdAndIsDeletedFalse(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         if (!post.getAuthor().getEmail().equals(email)) {
-            throw new AccessDeniedException("게시글을 삭제할 권한이 없습니다.");
+            throw new CustomException(ErrorCode.FORBIDDEN_USER, "게시글을 삭제할 권한이 없습니다.");
         }
 
         // 삭제 전 이미지 URL 백업

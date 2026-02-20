@@ -29,7 +29,7 @@ public class UserController {
 
     @Operation(summary = "회원가입", description = "이메일, 비밀번호, 닉네임 등으로 사용자를 생성합니다.")
     @PostMapping("/signup")
-    public ResponseEntity<Map<String, String>> signUp(@RequestBody UserSignUpDto userSignUpDto) throws Exception {
+    public ResponseEntity<Map<String, String>> signUp(@RequestBody UserSignUpDto userSignUpDto) {
         log.info("[SignUp] email={}, nickname={}", userSignUpDto.getEmail(), userSignUpDto.getNickname());
         userService.signUp(userSignUpDto);
         return ResponseEntity.ok(Map.of("message", "회원가입이 성공적으로 완료되었습니다."));
@@ -64,9 +64,7 @@ public class UserController {
     @Operation(summary = "내 정보 조회", description = "현재 로그인된 사용자의 정보를 조회합니다.")
     @GetMapping("/me")
     public ResponseEntity<UserResponseDto> getMyInfo(@AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+        // userDetails가 null일 가능성은 SecurityConfig에서 이미 처리되므로, 여기서는 항상 유효하다고 가정
         UserResponseDto userInfo = userService.getUserInfoByEmail(userDetails.getUsername());
         return ResponseEntity.ok(userInfo);
     }
@@ -77,9 +75,7 @@ public class UserController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody PasswordUpdateRequestDto requestDto) {
 
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+        // userDetails가 null일 가능성은 SecurityConfig에서 이미 처리되므로, 여기서는 항상 유효하다고 가정
         log.info("[UpdatePassword] user={}", userDetails.getUsername());
         userService.updatePassword(userDetails.getUsername(), requestDto);
         return ResponseEntity.ok(Map.of("message", "비밀번호가 성공적으로 변경되었습니다."));

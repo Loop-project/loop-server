@@ -13,6 +13,8 @@ import server.loop.domain.post.entity.repository.PostRepository;
 import server.loop.domain.user.dto.res.MyPagePostResponseDto;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
+import server.loop.global.common.error.ErrorCode;
+import server.loop.global.common.exception.CustomException;
 
 @Service
 @Transactional(readOnly = true)
@@ -48,7 +50,7 @@ public class MyPageService {
     // 공통 로직: 사용자 이메일로 User 객체 찾기
     private User findUserByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
     // 공통 로직: Slice<Post>를 SliceResponseDto<MyPagePostResponseDto>로 변환

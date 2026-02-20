@@ -44,7 +44,7 @@ public class PostController {
     public ResponseEntity<String> createPost(
             @RequestPart("requestDto") PostCreateRequestDto requestDto, // 2. JSON 데이터 부분
             @RequestPart(value = "images", required = false) List<MultipartFile> images, // 3. 파일 부분
-            @AuthenticationPrincipal UserDetails userDetails) throws IOException {
+            @AuthenticationPrincipal UserDetails userDetails) {
 
         log.info("[CREATE_POST] dto={}, category={}, principal={}", requestDto, requestDto.getCategory(), userDetails.getUsername());
         Long postId = postFacade.createPost(requestDto, images, userDetails.getUsername());
@@ -72,7 +72,7 @@ public class PostController {
             @RequestPart("requestDto") PostUpdateRequestDto requestDto,
             @RequestPart(value = "images", required = false) List<MultipartFile> images,
             @AuthenticationPrincipal UserDetails userDetails
-    ) throws AccessDeniedException, IOException {
+    ) {
         log.info("[UPDATE_POST] postId={}, principal={}", postId, userDetails.getUsername());
         postFacade.updatePost(postId, requestDto, images, userDetails.getUsername());
         return ResponseEntity.ok("게시글이 성공적으로 수정되었습니다. ID: " + postId);
@@ -83,7 +83,7 @@ public class PostController {
     @Operation(summary = "게시글 삭제", description = "작성자 본인의 게시글을 삭제합니다.")
     @DeleteMapping("/{postId}")
     public ResponseEntity<Map<String, Object>> deletePost(@PathVariable Long postId,
-                                                          @AuthenticationPrincipal UserDetails userDetails) throws AccessDeniedException {
+                                                          @AuthenticationPrincipal UserDetails userDetails) {
         log.info("[DELETE_POST] postId={}, principal={}", postId, userDetails.getUsername());
         postFacade.deletePost(postId, userDetails.getUsername());
 

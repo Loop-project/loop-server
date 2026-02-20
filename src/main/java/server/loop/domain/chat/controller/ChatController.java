@@ -87,8 +87,9 @@ public class ChatController {
             @PathVariable String roomId,
             @RequestParam(defaultValue = "50") int size,
             @RequestParam(required = false) Long beforeId,
+            @RequestParam(required = false) Long afterId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(chatService.getMessages(userDetails, roomId, size, beforeId));
+        return ResponseEntity.ok(chatService.getMessages(userDetails, roomId, size, beforeId, afterId));
     }
 
     @GetMapping("/rooms/{roomId}")

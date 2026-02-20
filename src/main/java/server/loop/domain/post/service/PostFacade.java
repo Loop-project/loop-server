@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import server.loop.domain.post.dto.post.req.PostCreateRequestDto;
 import server.loop.domain.post.dto.post.req.PostUpdateRequestDto;
+import server.loop.global.common.error.ErrorCode;
+import server.loop.global.common.exception.CustomException;
 import server.loop.global.config.s3.S3UploadService;
 
 import java.io.IOException;
@@ -21,24 +23,28 @@ public class PostFacade {
     private final S3UploadService s3UploadService;
 
     // 게시글 생성 Facade
-    public Long createPost(PostCreateRequestDto requestDto, List<MultipartFile> images, String email) throws IOException {
+    public Long createPost(PostCreateRequestDto requestDto, List<MultipartFile> images, String email) {
         List<String> uploadedUrls = new ArrayList<>();
-        try{
-            if(images != null && !images.isEmpty()){
-                for(MultipartFile image : images){
-                    uploadedUrls.add(s3UploadService.uploadFile(image, "post-images"));                }
+        try {
+            if (images != null && !images.isEmpty()) {
+                for (MultipartFile image : images) {
+                    uploadedUrls.add(s3UploadService.uploadFile(image, "post-images"));
+                }
             }
             return postService.createPostInTransaction(requestDto, uploadedUrls, email);
-        } catch (Exception e){
+        } catch (IOException e) {
+            log.error("S3 이미지 업로드 실패. error={}", e.getMessage());
+            deleteUploadedImages(uploadedUrls);
+            throw new CustomException(ErrorCode.IO_EXCEPTION_ON_IMAGE_UPLOAD, e.getMessage());
+        } catch (Exception e) {
             log.error("게시글 생성 실패. 업로드된 이미지 롤백 수행. error={}", e.getMessage());
             deleteUploadedImages(uploadedUrls);
             throw e;
-
         }
     }
 
     // 2. 게시글 수정 Facade
-    public Long updatePost(Long postId, PostUpdateRequestDto requestDto, List<MultipartFile> newImages, String email) throws IOException {
+    public Long updatePost(Long postId, PostUpdateRequestDto requestDto, List<MultipartFile> newImages, String email) {
 
         List<String> newUploadedUrls = new ArrayList<>();
 
@@ -65,6 +71,10 @@ public class PostFacade {
 
             return postId;
 
+        } catch (IOException e) {
+            log.error("S3 이미지 업로드 실패. error={}", e.getMessage());
+            deleteUploadedImages(newUploadedUrls);
+            throw new CustomException(ErrorCode.IO_EXCEPTION_ON_IMAGE_UPLOAD, e.getMessage());
         } catch (Exception e) {
             log.error("게시글 수정 실패. 업로드된 새 이미지 롤백 수행.");
             deleteUploadedImages(newUploadedUrls);
@@ -73,7 +83,7 @@ public class PostFacade {
     }
 
     // 3. 게시글 삭제 Facade
-    public void deletePost(Long postId, String email) throws AccessDeniedException {
+    public void deletePost(Long postId, String email) {
         // DB에서 먼저 삭제하고, 삭제된 이미지 URL 목록을 받아옴
         List<String> urlsToDelete = postService.deletePostInTransaction(postId, email);
 

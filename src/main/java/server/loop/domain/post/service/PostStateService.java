@@ -16,7 +16,7 @@ public class PostStateService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String checkAndBlindPost(Long postId) {
-        Post post = postRepository.findById(postId)
+        Post post = postRepository.findByIdAndIsDeletedFalse(postId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
 
         if (post.getReportCount() >= REPORT_THRESHOLD) {

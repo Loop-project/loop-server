@@ -2,10 +2,10 @@ package server.loop.domain.chat.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,11 +20,14 @@ import server.loop.domain.chat.entity.ChatRoomMember;
 import server.loop.domain.chat.entity.repository.ChatMessageRepository;
 import server.loop.domain.chat.entity.repository.ChatRoomMemberRepository;
 import server.loop.domain.chat.entity.repository.ChatRoomRepository;
+import server.loop.domain.chat.event.ChatMessageSavedEvent;
 import server.loop.domain.post.entity.Category;
 import server.loop.domain.post.entity.Post;
 import server.loop.domain.post.entity.repository.PostRepository;
 import server.loop.domain.user.entity.User;
 import server.loop.domain.user.entity.repository.UserRepository;
+import server.loop.global.common.error.ErrorCode;
+import server.loop.global.common.exception.CustomException;
 
 import java.util.List;
 import java.util.UUID;
@@ -38,7 +41,7 @@ public class ChatService {
     private final ChatRoomMemberRepository memberRepository;
     private final ChatMessageRepository messageRepository;
     private final UserRepository userRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final ApplicationEventPublisher eventPublisher;
     private final PostRepository postRepository;
 
     // ==== Room ====
@@ -71,7 +74,7 @@ public class ChatService {
         log.info("[JoinChatRoom] roomId={}, user={}", roomId, user.getEmail());
 
         if (!"PUBLIC".equals(room.getVisibility())) {
-            throw new IllegalStateException("공개방이 아닙니다. 초대/승인이 필요합니다.");
+            throw new CustomException(ErrorCode.FORBIDDEN_USER, "공개방이 아닙니다. 초대/승인이 필요합니다.");
         }
         if (!memberRepository.existsByRoomAndUser(room, user)) {
             memberRepository.save(ChatRoomMember.builder()
@@ -122,18 +125,18 @@ public class ChatService {
     public ChatRoomResponse startPrivateChat(UserDetails userDetails, Long postId) {
         User me = currentUser(userDetails);
 
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+        Post post = postRepository.findByIdAndIsDeletedFalse(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
         if (post.getCategory() != Category.USED) {
-            throw new IllegalStateException("중고 거래 게시글에서만 1:1 채팅이 가능합니다.");
+            throw new CustomException(ErrorCode.CONFLICT, "중고 거래 게시글에서만 1:1 채팅이 가능합니다.");
         }
 
         User seller = post.getAuthor();
         log.info("[StartPrivateChat] buyer={}, seller={}, postId={}", me.getEmail(), seller.getEmail(), postId);
 
         if (me.getId().equals(seller.getId())) {
-            throw new IllegalArgumentException("자신의 게시글과는 채팅할 수 없습니다.");
+            throw new CustomException(ErrorCode.CONFLICT, "자신의 게시글과는 채팅할 수 없습니다.");
         }
 
         return memberRepository.findByRoom_PostAndUser(post, me)
@@ -170,7 +173,7 @@ public class ChatService {
         ChatRoom room = getRoomOrThrow(req.getRoomId());
 
         if (!memberRepository.existsByRoomAndUser(room, sender)) {
-            throw new IllegalStateException("해당 채팅방의 멤버가 아닙니다.");
+            throw new CustomException(ErrorCode.FORBIDDEN_USER, "해당 채팅방의 멤버가 아닙니다.");
         }
 
         ChatMessage saved = messageRepository.save(ChatMessage.builder()
@@ -181,22 +184,25 @@ public class ChatService {
                 .build());
 
         ChatMessageResponse payload = toMessageResponse(saved);
-        messagingTemplate.convertAndSend("/topic/chat." + room.getId(), payload);
+        eventPublisher.publishEvent(new ChatMessageSavedEvent(room.getId(), payload));
         log.info("[SendMessage] roomId={}, sender={}, type={}", room.getId(), sender.getEmail(), req.getType());
         return payload;
     }
 
     @Transactional(readOnly = true)
-    public List<ChatMessageResponse> getMessages(UserDetails userDetails, String roomId, int size, Long beforeId) {
+    public List<ChatMessageResponse> getMessages(UserDetails userDetails, String roomId, int size, Long beforeId, Long afterId) {
         User me = currentUser(userDetails);
         ChatRoom room = getRoomOrThrow(roomId);
 
         if (!memberRepository.existsByRoomAndUser(room, me)) {
-            throw new IllegalStateException("해당 채팅방의 멤버가 아닙니다.");
+            throw new CustomException(ErrorCode.FORBIDDEN_USER, "해당 채팅방의 멤버가 아닙니다.");
+        }
+        if (beforeId != null && afterId != null) {
+            throw new IllegalArgumentException("beforeId와 afterId는 동시에 사용할 수 없습니다.");
         }
 
         PageRequest pr = PageRequest.of(0, Math.min(size, 100));
-        List<ChatMessage> list = messageRepository.findMessages(roomId, beforeId, pr);
+        List<ChatMessage> list = messageRepository.findMessages(roomId, beforeId, afterId, pr);
 
         return list.stream().map(this::toMessageResponse).toList();
     }
@@ -216,11 +222,11 @@ public class ChatService {
 
     private User currentUser(UserDetails userDetails) {
         if (userDetails == null || userDetails.getUsername() == null) {
-            throw new IllegalStateException("인증 정보가 없습니다.");
+            throw new CustomException(ErrorCode.UNAUTHORIZED_USER, "인증 정보가 없습니다.");
         }
         String email = userDetails.getUsername(); 
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다. email=" + email));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다. email=" + email));
     }
 
     private User currentUserOrNull(UserDetails userDetails) {
@@ -231,7 +237,7 @@ public class ChatService {
 
     private ChatRoom getRoomOrThrow(String roomId) {
         return chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다. roomId=" + roomId));
+                .orElseThrow(() -> new CustomException(ErrorCode.CHAT_ROOM_NOT_FOUND, "존재하지 않는 채팅방입니다. roomId=" + roomId));
     }
 
     private String normalizeVisibility(String v) {

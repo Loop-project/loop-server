@@ -14,7 +14,10 @@ import server.loop.domain.user.dto.req.UserSignUpDto;
 import server.loop.domain.user.dto.req.UserUpdateRequestDto;
 import server.loop.domain.user.dto.res.UserResponseDto;
 import server.loop.domain.user.entity.User;
+import server.loop.domain.user.entity.UserStatus;
 import server.loop.domain.user.entity.repository.UserRepository;
+import server.loop.global.common.error.ErrorCode;
+import server.loop.global.common.exception.CustomException;
 import server.loop.global.security.JwtTokenProvider;
 
 import java.time.LocalDateTime;
@@ -30,20 +33,20 @@ public class UserService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
 
-    public Long signUp(UserSignUpDto signUpDto) throws Exception {
+    public Long signUp(UserSignUpDto signUpDto) {
         log.info("[SignUp] Request email: {}, nickname: {}", signUpDto.getEmail(), signUpDto.getNickname());
         // 이메일 중복 체크
         if (userRepository.findByEmail(signUpDto.getEmail()).isPresent()) {
             log.warn("[SignUp] Email already exists: {}", signUpDto.getEmail());
-            throw new Exception("이미 존재하는 이메일입니다.");
+            throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
         //닉네임 중복 체크
         if (userRepository.findByNickname(signUpDto.getNickname()).isPresent()) {
             log.warn("[SignUp] Nickname already exists: {}", signUpDto.getNickname());
-            throw new Exception("이미 존재하는 닉네임입니다.");
+            throw new CustomException(ErrorCode.ALREADY_EXISTS, "이미 존재하는 닉네임입니다.");
         }
         if (!signUpDto.isAgreedToTermsOfService() || !signUpDto.isAgreedToPrivacyPolicy()) {
-            throw new IllegalArgumentException("필수 약관에 동의해야 합니다.");
+            throw new CustomException(ErrorCode.INVALID_BODY, "필수 약관에 동의해야 합니다.");
         }
         LocalDateTime now = LocalDateTime.now();
 
@@ -67,11 +70,13 @@ public class UserService {
     public TokenDto login(UserLoginDto loginDto) {
         log.info("[Login] Request email: {}", loginDto.getEmail());
         User user = userRepository.findByEmailAndDeletedAtIsNull(loginDto.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.UNAUTHORIZED_USER, "아이디 또는 비밀번호가 올바르지 않습니다."));
 
         if (!passwordEncoder.matches(loginDto.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
+            throw new CustomException(ErrorCode.UNAUTHORIZED_USER, "아이디 또는 비밀번호가 올바르지 않습니다.");
         }
+
+        validateUserStatusForLogin(user);
 
         String accessToken = jwtTokenProvider.createAccessToken(user.getEmail());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail());
@@ -91,7 +96,7 @@ public class UserService {
     @Transactional(readOnly = true) // 조회만 하므로 readOnly = true 추가
     public UserResponseDto getUserInfoByEmail(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다.: " + email));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다.: " + email));
 
         // User 엔티티를 UserResponseDto로 변환하여 반환
         return new UserResponseDto(
@@ -102,12 +107,12 @@ public class UserService {
     }
 
     //회원 정보 수정
-    public void updateUser(UserUpdateRequestDto requestDto, String email) throws Exception {
+    public void updateUser(UserUpdateRequestDto requestDto, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         if (requestDto.getNickname() != null && !requestDto.getNickname().isBlank()) {
             if (userRepository.findByNickname(requestDto.getNickname()).isPresent()) {
-                throw new Exception("이미 존재하는 닉네임입니다.");
+                throw new CustomException(ErrorCode.ALREADY_EXISTS, "이미 존재하는 닉네임입니다.");
             }
             user.updateNickname(requestDto.getNickname());
         }
@@ -119,7 +124,7 @@ public class UserService {
     //회원 탈퇴
     public void deleteUser(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         refreshTokenRepository.deleteByUserId(user.getId());
 
@@ -130,26 +135,38 @@ public class UserService {
     //닉네임 변경
     public void updateNickname(String email, String newNickname) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "해당 사용자가 존재하지 않습니다."));
         if (newNickname == null || newNickname.isBlank()) {
-            throw new IllegalArgumentException("닉네임은 비어 있을 수 없습니다.");
+            throw new CustomException(ErrorCode.INVALID_NAME, "닉네임은 비어 있을 수 없습니다.");
         }
         user.setNickname(newNickname);
     }
     //비밀번호 변경
     public void updatePassword(String username, PasswordUpdateRequestDto dto) {
         User user = userRepository.findByEmail(username)
-                .orElseThrow(() -> new IllegalArgumentException("해당 사용자가 존재하지 않습니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "해당 사용자가 존재하지 않습니다."));
 
         // 현재 비밀번호 일치 확인
         if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+            throw new CustomException(ErrorCode.INVALID_PASSWORD, "현재 비밀번호가 일치하지 않습니다.");
         }
 
         // 새 비밀번호 암호화 후 저장
         String encodedNewPassword = passwordEncoder.encode(dto.getNewPassword());
         user.updatePassword(encodedNewPassword);
         userRepository.save(user);
+    }
+
+    private void validateUserStatusForLogin(User user) {
+        if (user.getStatus() == UserStatus.BANNED) {
+            throw new CustomException(ErrorCode.FORBIDDEN_USER, "영구 정지된 계정입니다.");
+        }
+        if (user.getStatus() == UserStatus.SUSPENDED) {
+            throw new CustomException(ErrorCode.FORBIDDEN_USER, "정지된 계정입니다.");
+        }
+        if (user.getStatus() == UserStatus.WITHDRAWN || user.getDeletedAt() != null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED_USER, "탈퇴한 계정입니다.");
+        }
     }
 
 }

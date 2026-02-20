@@ -2,17 +2,21 @@ package server.loop.domain.notification.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import server.loop.domain.notification.dto.res.NotificationResponseDto;
 import server.loop.domain.notification.entity.Notification;
 import server.loop.domain.notification.entity.repository.NotificationRepository;
+import server.loop.domain.notification.event.NotificationSavedEvent;
 import server.loop.domain.post.entity.Comment;
 import server.loop.domain.post.entity.Post;
 import server.loop.domain.user.entity.User;
+import server.loop.global.common.error.ErrorCode;
+import server.loop.global.common.exception.CustomException;
 
 import java.util.List;
 
@@ -22,7 +26,7 @@ import java.util.List;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void send(User sender, User receiver, Post post, Comment comment, String postTitle, String message) {
@@ -42,7 +46,7 @@ public class NotificationService {
         notificationRepository.save(notification);
 
         NotificationResponseDto dto = NotificationResponseDto.from(notification);
-        messagingTemplate.convertAndSendToUser(receiver.getEmail(), "/queue/notifications", dto);
+        eventPublisher.publishEvent(new NotificationSavedEvent(receiver.getEmail(), dto));
     }
 
 
@@ -52,12 +56,25 @@ public class NotificationService {
                 .map(NotificationResponseDto::from);
     }
 
+    @Transactional(readOnly = true)
+    public List<NotificationResponseDto> getNotificationsSince(User receiver, Long afterId, int size) {
+        if (afterId == null) {
+            return List.of();
+        }
+        int boundedSize = Math.min(Math.max(size, 1), 100);
+        return notificationRepository
+                .findByReceiverAndIdGreaterThanOrderByIdAsc(receiver, afterId, PageRequest.of(0, boundedSize))
+                .stream()
+                .map(NotificationResponseDto::from)
+                .toList();
+    }
+
     @Transactional
     public void markAsRead(Long id, User user) {
         Notification notification = notificationRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("알림 없음"));
+                .orElseThrow(() -> new CustomException(ErrorCode.NOTIFICATION_NOT_FOUND));
         if (!notification.getReceiver().getId().equals(user.getId())) {
-            throw new SecurityException("본인의 알림만 열람 가능");
+            throw new CustomException(ErrorCode.FORBIDDEN_USER, "본인의 알림만 열람 가능");
         }
         notification.markAsRead();
     }

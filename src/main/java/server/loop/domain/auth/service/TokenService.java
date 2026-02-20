@@ -8,6 +8,9 @@ import server.loop.domain.auth.entity.RefreshToken;
 import server.loop.domain.auth.entity.repo.RefreshTokenRepository;
 import server.loop.global.security.JwtTokenProvider;
 
+import server.loop.global.common.error.ErrorCode;
+import server.loop.global.common.exception.CustomException;
+
 @Service
 @RequiredArgsConstructor
 public class TokenService {
@@ -18,11 +21,11 @@ public class TokenService {
     @Transactional
     public TokenDto reissueTokens(String refreshToken) {
         if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new IllegalArgumentException("유효하지 않은 Refresh Token 입니다.");
+            throw new CustomException(ErrorCode.INVALID_TOKEN, "유효하지 않은 Refresh Token 입니다.");
         }
 
         RefreshToken foundRefreshToken = refreshTokenRepository.findByToken(refreshToken)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 Refresh Token 입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_TOKEN, "존재하지 않는 Refresh Token 입니다."));
 
         String newAccessToken = jwtTokenProvider.createAccessToken(foundRefreshToken.getUser().getEmail());
 

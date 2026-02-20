@@ -63,3 +63,7 @@ springdoc:
     path: /swagger-ui.html
     tags-sorter: alpha
     operations-sorter: alpha
+
+app:
+  oauth2:
+    redirect-uri: ${OAUTH2_REDIRECT_URI:https://loop-front-eta.vercel.app/oauth/callback}
