@@ -78,4 +78,6 @@ jobs:
               -e AWS_REGION='${{ secrets.AWS_REGION }}' \
               -e AWS_S3_BUCKET='${{ secrets.AWS_S3_BUCKET }}' \
               -e JWT_SECRET='${{ secrets.JWT_SECRET }}' \
+              -e GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}' \
+              -e GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}' \
               ghcr.io/loop-project/loop-server:latest
